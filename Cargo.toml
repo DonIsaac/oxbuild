@@ -26,4 +26,5 @@ missing_const_for_fn    = "allow"
 [workspace.dependencies]
 oxbuild_compiler = { path = "crates/oxbuild_compiler" }
 
-oxc = { version = "0.29.0" }
+oxc               = { version = "0.29.0", features = ["full", "sourcemap", "isolated_declarations"] }
+static_assertions = "1.1.0"

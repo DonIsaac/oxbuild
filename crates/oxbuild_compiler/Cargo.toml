@@ -8,4 +8,5 @@ license.workspace      = true
 rust-version.workspace = true
 
 [dependencies]
-oxc = { workspace = true }
+oxc               = { workspace = true }
+static_assertions = { workspace = true }

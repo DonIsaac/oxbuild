@@ -5,8 +5,8 @@ alias f := fix
 
 # Apply formatting fixes
 fmt:
-    cargo fmt --all
-    taplo fmt
+    @cargo fmt --all
+    @taplo fmt
 
 # Apply all lint/format auto fixes. Stage all changes first.
 fix:
