@@ -1,0 +1,16 @@
+# Build Artifacts
+/target
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+*.log
+
+# Editor files
+*.swp
+*.swo
+*.idea
+
+# Misc
+.DS_Store
