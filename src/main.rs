@@ -1,7 +1,7 @@
 mod cli;
+mod compiler;
 mod options;
 mod walk;
-mod compiler;
 
 use miette::Result;
 use std::time::Instant;
@@ -9,6 +9,7 @@ use std::time::Instant;
 use cli::{cli, CliOptions};
 use options::OxbuildOptions;
 
+#[allow(clippy::print_stdout)]
 fn main() -> Result<()> {
     let matches = cli();
     let opts = CliOptions::new(matches).and_then(OxbuildOptions::new)?;

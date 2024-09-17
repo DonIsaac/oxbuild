@@ -114,7 +114,6 @@ fn isolated_declarations<'a>(
         return Err(errors);
     }
 
-    // let CodegenReturn { source_text, source_map, .. } = Codegen::new()
     let result = Codegen::new()
         .with_source_text(source_text)
         .with_capacity(source_text.len())
@@ -123,7 +122,6 @@ fn isolated_declarations<'a>(
             trivias,
             CommentOptions {
                 preserve_annotate_comments: false,
-                ..Default::default()
             },
         )
         // .enable_source_map(source_name, source_text)

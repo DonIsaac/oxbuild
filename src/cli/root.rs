@@ -29,7 +29,6 @@ impl Deref for Root {
 }
 
 impl Root {
-    #[must_use]
     pub fn new() -> Result<Self> {
         let mut manager = PackageJsonManager::new();
         let cwd = env::current_dir()
@@ -51,12 +50,9 @@ impl Root {
         Ok(Self { cwd, root, stat })
     }
 
+    #[allow(dead_code)]
     pub fn cwd(&self) -> &PathBuf {
         &self.cwd
-    }
-
-    pub fn root(&self) -> Option<&PathBuf> {
-        self.root.as_ref()
     }
 
     pub fn resolve<P: AsRef<Path>>(&self, path: P) -> PathBuf {
