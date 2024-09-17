@@ -1,6 +1,7 @@
 mod cli;
 mod options;
 mod walk;
+mod compiler;
 
 use miette::Result;
 use std::time::Instant;

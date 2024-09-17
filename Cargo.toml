@@ -1,59 +1,17 @@
 [package]
-name                   = "oxbuild"
-version                = "0.1.0"
-description.workspace  = true
-authors.workspace      = true
-edition.workspace      = true
-license.workspace      = true
-rust-version.workspace = true
-
-[[bin]]
-name = "oxbuild"
-path = "apps/oxbuild/src/main.rs"
-
-[dependencies]
-oxbuild_compiler = { workspace = true }
-
-anyhow              = { workspace = true }
-clap                = { workspace = true }
-crossbeam           = { workspace = true }
-ignore              = { workspace = true }
-json-strip-comments = { workspace = true }
-miette              = { workspace = true }
-oxc                 = { workspace = true }
-package-json        = { workspace = true }
-rayon               = { workspace = true }
-serde               = { workspace = true }
-serde_json          = { workspace = true }
-
-[workspace]
-resolver = "2"
-members  = ["crates/*"]
-
-[workspace.package]
+name         = "oxbuild"
+version      = "0.1.0"
 description  = "Ultra-fast typescript compiler"
 authors      = ["Don Isaac <don@donisaac.dev>"]
 edition      = "2021"
 license      = "MIT"
 rust-version = "1.76.0"                         # Support last 6 minor versions
 
-[workspace.lints.clippy]
-all        = { level = "warn", priority = -1 }
-empty_docs = { level = "allow", priority = 1 }
+[[bin]]
+name = "oxbuild"
+path = "src/main.rs"
 
-dbg_macro    = "warn"
-print_stdout = "warn"
-print_stderr = "warn"
-
-module_name_repititions = "allow"
-too_many_lines          = "allow"
-must_use_candidate      = "allow"
-doc_markdown            = "allow"
-missing_const_for_fn    = "allow"
-
-[workspace.dependencies]
-oxbuild_compiler = { version = "0.1.0", path = "crates/oxbuild_compiler" }
-
+[dependencies]
 anyhow              = { version = "1.0.89" }
 clap                = { version = "4.5.17", features = ["cargo"] }
 crossbeam           = { version = "0.8.4" }
@@ -66,3 +24,17 @@ rayon               = { version = "1.10.0" }
 serde               = { version = "1.0.210" }
 serde_json          = { version = "1.0.128" }
 static_assertions   = { version = "1.1.0" }
+
+[lints.clippy]
+all        = { level = "warn", priority = -1 }
+empty_docs = { level = "allow", priority = 1 }
+
+dbg_macro    = "warn"
+print_stdout = "warn"
+print_stderr = "warn"
+
+module_name_repititions = "allow"
+too_many_lines          = "allow"
+must_use_candidate      = "allow"
+doc_markdown            = "allow"
+missing_const_for_fn    = "allow"

@@ -734,19 +734,11 @@ dependencies = [
  "ignore",
  "json-strip-comments",
  "miette",
- "oxbuild_compiler",
  "oxc",
  "package-json",
  "rayon",
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "oxbuild_compiler"
-version = "0.1.0"
-dependencies = [
- "oxc",
  "static_assertions",
 ]
 

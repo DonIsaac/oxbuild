@@ -1,4 +1,4 @@
-include = ["*.toml", ".cargo/*.toml", "crates/*/*.toml", "apps/*/*.toml"]
+include = ["*.toml", ".cargo/*.toml"]
 
 [formatting]
 align_entries = true

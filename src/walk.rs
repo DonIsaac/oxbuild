@@ -8,9 +8,10 @@ use std::{
 use ignore::{DirEntry, Error as WalkError, ParallelVisitor, ParallelVisitorBuilder, WalkState};
 use oxc::diagnostics::OxcDiagnostic;
 
-use oxbuild_compiler::{compile, CompileOptions, CompiledOutput};
-
-use crate::OxbuildOptions;
+use crate::{
+    compiler::{compile, CompileOptions, CompiledOutput},
+    OxbuildOptions,
+};
 
 pub struct WalkerBuilder {
     options: Arc<OxbuildOptions>,
