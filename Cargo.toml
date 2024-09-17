@@ -52,7 +52,7 @@ doc_markdown            = "allow"
 missing_const_for_fn    = "allow"
 
 [workspace.dependencies]
-oxbuild_compiler = { path = "crates/oxbuild_compiler" }
+oxbuild_compiler = { version = "0.1.0", path = "crates/oxbuild_compiler" }
 
 anyhow              = { version = "1.0.89" }
 clap                = { version = "4.5.17", features = ["cargo"] }
