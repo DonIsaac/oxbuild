@@ -7,7 +7,7 @@ license      = "MIT"
 repository   = "https://github.com/DonIsaac/oxbuild"
 homepage     = "https://github.com/DonIsaac/oxbuild"
 keywords     = ["typescript", "javascript", "compiler", "oxc", "oxbuild"]
-categories   = ["development-tools", "web-development", "compilers"]
+categories   = ["development-tools", "web-programming", "compilers"]
 edition      = "2021"
 rust-version = "1.76.0"                                                   # Support last 6 minor versions
 
