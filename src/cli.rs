@@ -10,17 +10,12 @@ pub(crate) use root::Root;
 
 pub fn cli() -> ArgMatches {
     command!()
-        // .arg(
-        //     Arg::new("input")
-        //         .value_hint(ValueHint::DirPath)
-        //         .help("Directory containing your source code. Defaults to CWD"),
-        // )
         .arg(
             Arg::new("config")
                 .short('c')
                 .long("config")
                 .value_hint(ValueHint::FilePath)
-                .help("Path to .oxbuildrc"),
+                .help("Path to .oxbuildrc. Not yet supported"),
         )
         .arg(
             Arg::new("tsconfig")
@@ -28,12 +23,6 @@ pub fn cli() -> ArgMatches {
                 .long("tsconfig")
                 .value_hint(ValueHint::FilePath)
                 .help("Path to tsconfig.json"),
-        )
-        .arg(
-            Arg::new("cwd")
-                .long("cwd")
-                .value_hint(ValueHint::DirPath)
-                .help("Root directory for the project. Defaults to the current working directory."),
         )
         .get_matches()
 }

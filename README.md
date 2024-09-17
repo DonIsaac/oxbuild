@@ -1,13 +1,17 @@
 # Oxbuild
 
+[![CI](https://github.com/DonIsaac/oxbuild/actions/workflows/ci.yml/badge.svg)](https://github.com/DonIsaac/oxbuild/actions/workflows/ci.yml)
+[![Crates.io Version](https://img.shields.io/crates/v/oxbuild)](https://crates.io/crates/oxbuild)
+
+
 An ultra-fast `tsc`-like compiler built on top of [oxc](https://github.com/oxc-project/oxc).
 
 ## Features
 
 - Transpile TypeScript, JavaScript, JSX, and TSX
-- Emit `.d.ts` files for TypeScript projects using
+- Emit `.d.ts` files for TypeScript projects that use
   [`isolatedDeclarations`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-5.html#isolated-declarations)
-- Source maps for transpiled code
+- JS Source maps for transpiled code
 
 ## Installation
 
