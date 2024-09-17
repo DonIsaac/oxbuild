@@ -169,8 +169,8 @@ fn transform<'a>(
 
     let codegen = Codegen::new()
         .enable_comment(source_text, trivias.clone(), Default::default())
-        .with_capacity(source_text.len());
-    // .enable_source_map(source_path.as_os_str().to_str().unwrap(), source_text)
+        .with_capacity(source_text.len())
+        .enable_source_map(source_path.as_os_str().to_str().unwrap(), source_text);
     //.with_mangler(Some(Default::default()));
 
     codegen.build(program)
