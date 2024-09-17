@@ -3,9 +3,13 @@ name         = "oxbuild"
 version      = "0.1.0"
 description  = "Ultra-fast typescript compiler"
 authors      = ["Don Isaac <don@donisaac.dev>"]
-edition      = "2021"
 license      = "MIT"
-rust-version = "1.76.0"                         # Support last 6 minor versions
+repository   = "https://github.com/DonIsaac/oxbuild"
+homepage     = "https://github.com/DonIsaac/oxbuild"
+keywords     = ["typescript", "javascript", "compiler", "oxc", "oxbuild"]
+categories   = ["development-tools", "web-development", "compilers"]
+edition      = "2021"
+rust-version = "1.76.0"                                                   # Support last 6 minor versions
 
 [[bin]]
 name = "oxbuild"
