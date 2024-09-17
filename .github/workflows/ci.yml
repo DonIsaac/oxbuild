@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Boshen/setup-rust@main
+        with:
+          components: rustfmt
+          tools: taplo-cli
+          restore-cache: false
+      - run: taplo lint
+      - run: cargo fmt -- --check
+
+  lint:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@v1
+      - uses: Boshen/setup-rust@main
+        with:
+          cache-key: warm
+          components: clippy
+      - run: cargo clippy --all-targets --all-features --no-deps -- -D warnings
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Boshen/setup-rust@main
+        with:
+          # warm cache factory for all other CI jobs
+          # cache `target` directory to avoid download crates
+          save-cache: ${{ github.ref_name == 'main' }}
+          cache-key: warm
+          tools: cargo-nextest
+
+      - run: cargo check --all-targets --locked
+      - run: cargo test --no-run
+      - run: cargo nextest run
