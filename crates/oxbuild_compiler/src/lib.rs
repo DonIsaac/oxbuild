@@ -4,6 +4,7 @@ mod options;
 use oxc::{
     ast::{ast::Program, Trivias},
     codegen::CodegenReturn,
+    transformer::{ES2015Options, ReactOptions},
 };
 use std::{fs, path::Path};
 
@@ -17,7 +18,7 @@ use oxc::{
     semantic::{Semantic, SemanticBuilder, SemanticBuilderReturn},
     sourcemap::SourceMap,
     span::SourceType,
-    transformer::{Transformer, TransformerReturn},
+    transformer::{TransformOptions, Transformer, TransformerReturn},
 };
 
 pub use options::CompileOptions;
@@ -47,7 +48,7 @@ pub fn compile(
         trivias,
         mut errors,
         panicked,
-    } = Parser::new(&allocator, &source_text, source_type.clone()).parse();
+    } = Parser::new(&allocator, &source_text, source_type).parse();
 
     if panicked {
         debug_assert!(!errors.is_empty());
@@ -87,6 +88,8 @@ pub fn compile(
     Ok(CompiledOutput {
         source_text: output_text,
         source_map,
+        // declarations: String::new(),
+        // declarations_map: None,
         declarations: id,
         declarations_map: id_map,
     })
@@ -119,7 +122,7 @@ fn isolated_declarations<'a>(
                 ..Default::default()
             },
         )
-        .enable_source_map(source_name, source_text)
+        // .enable_source_map(source_name, source_text)
         .build(&program);
 
     Ok(result)
@@ -134,13 +137,23 @@ fn transform<'a>(
     let trivias = semantic.trivias().clone();
     let source_text = semantic.source_text();
 
+    let options = TransformOptions {
+        react: ReactOptions {
+            jsx_plugin: true,
+            display_name_plugin: true,
+            jsx_source_plugin: true,
+            development: true,
+            ..Default::default()
+        },
+        ..Default::default()
+    };
     let transformer = Transformer::new(
-        &allocator,
-        &source_path,
-        semantic.source_type().clone(),
+        allocator,
+        source_path,
+        *semantic.source_type(),
         source_text,
         trivias.clone(),
-        Default::default(),
+        options,
     );
     let (symbols, scopes) = semantic.into_symbol_table_and_scope_tree();
 
@@ -151,10 +164,10 @@ fn transform<'a>(
     } = transformer.build_with_symbols_and_scopes(symbols, scopes, program);
 
     let codegen = Codegen::new()
-        .enable_comment(&source_text, trivias.clone(), Default::default())
-        .with_capacity(source_text.len())
-        .enable_source_map(source_path.as_os_str().to_str().unwrap(), &source_text)
-        .with_mangler(Some(Default::default()));
+        .enable_comment(source_text, trivias.clone(), Default::default())
+        .with_capacity(source_text.len());
+    // .enable_source_map(source_path.as_os_str().to_str().unwrap(), source_text)
+    //.with_mangler(Some(Default::default()));
 
     codegen.build(program)
 }

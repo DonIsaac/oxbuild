@@ -8,7 +8,12 @@ use clap::{command, Arg, ArgMatches, ValueHint};
 use miette::{IntoDiagnostic, Report, Result, WrapErr};
 
 pub fn cli() -> ArgMatches {
-    let matches = command!()
+    command!()
+        // .arg(
+        //     Arg::new("input")
+        //         .value_hint(ValueHint::DirPath)
+        //         .help("Directory containing your source code. Defaults to CWD"),
+        // )
         .arg(
             Arg::new("config")
                 .short('c')
@@ -29,15 +34,15 @@ pub fn cli() -> ArgMatches {
                 .value_hint(ValueHint::DirPath)
                 .help("Root directory for the project. Defaults to the current working directory."),
         )
-        .get_matches();
-
-    matches
+        .get_matches()
 }
 
 pub struct CliOptions {
     root: Root,
     pub config: Option<PathBuf>,
     pub tsconfig: Option<PathBuf>,
+    pub input: PathBuf,
+    pub output: PathBuf,
 }
 
 impl CliOptions {
@@ -55,7 +60,13 @@ impl CliOptions {
             root,
             config,
             tsconfig,
+            input: "./src".into(),
+            output: "./dist".into(),
         })
+    }
+
+    pub fn cwd(&self) -> &PathBuf {
+        self.root.cwd()
     }
 }
 
@@ -110,8 +121,11 @@ impl Root {
         Ok(self.find(possible_names))
     }
 
-    pub fn find(&self, names: &[&str]) -> Option<PathBuf> {
-        for name in names.into_iter().copied() {
+    pub fn find<I>(&self, names: I) -> Option<PathBuf>
+    where
+        I: IntoIterator<Item = &'static str>,
+    {
+        for name in names.into_iter() {
             let search_result = self
                 .stat
                 .iter()

@@ -10,5 +10,9 @@ rust-version.workspace = true
 [dependencies]
 oxbuild_compiler = { workspace = true }
 
-clap   = { workspace = true }
-miette = { workspace = true }
+clap      = { workspace = true }
+crossbeam = { workspace = true }
+ignore    = { workspace = true }
+miette    = { workspace = true }
+oxc       = { workspace = true }
+rayon     = { workspace = true }
