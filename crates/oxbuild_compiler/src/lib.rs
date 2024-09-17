@@ -38,8 +38,11 @@ pub fn compile(
     source_path: &Path,
 ) -> Result<CompiledOutput, Vec<OxcDiagnostic>> {
     let source_text = fs::read_to_string(source_path).unwrap();
+    // is this js? ts? tsx?
     let source_type = SourceType::from_path(source_path).unwrap();
+    // get the name as a pretty string
     let source_name = source_path.as_os_str().to_str().unwrap();
+    // needed by oxc to allocate memory.
     let allocator = Allocator::default();
 
     /* ========================== PARSE ========================== */
@@ -69,6 +72,7 @@ pub fn compile(
 
     /* ========================== TRANSFORM ========================== */
 
+    // produce .d.ts files
     let CodegenReturn {
         source_text: id,
         source_map: id_map,

@@ -1,11 +1,12 @@
-use std::{
-    env,
-    fs::{self, DirEntry},
-    path::PathBuf,
-};
+mod error;
+mod root;
+
+use std::{env, path::PathBuf};
 
 use clap::{command, Arg, ArgMatches, ValueHint};
-use miette::{IntoDiagnostic, Report, Result, WrapErr};
+use miette::Result;
+
+pub(crate) use root::Root;
 
 pub fn cli() -> ArgMatches {
     command!()
@@ -23,7 +24,7 @@ pub fn cli() -> ArgMatches {
         )
         .arg(
             Arg::new("tsconfig")
-                .short('t')
+                .short('p') // same as tsc
                 .long("tsconfig")
                 .value_hint(ValueHint::FilePath)
                 .help("Path to tsconfig.json"),
@@ -38,11 +39,11 @@ pub fn cli() -> ArgMatches {
 }
 
 pub struct CliOptions {
-    root: Root,
+    pub root: Root,
     pub config: Option<PathBuf>,
     pub tsconfig: Option<PathBuf>,
-    pub input: PathBuf,
-    pub output: PathBuf,
+    // pub input: PathBuf,
+    // pub output: PathBuf,
 }
 
 impl CliOptions {
@@ -60,8 +61,6 @@ impl CliOptions {
             root,
             config,
             tsconfig,
-            input: "./src".into(),
-            output: "./dist".into(),
         })
     }
 
@@ -70,6 +69,7 @@ impl CliOptions {
     }
 }
 
+/*
 struct Root {
     cwd: PathBuf,
     stat: Vec<DirEntry>,
@@ -110,6 +110,8 @@ impl Root {
                 )));
             }
 
+            // when the user provides a path to a file, we resolve it from the cwd since they're
+            // almost certainly providing paths relative to where they're running the CLI from.
             return self
                 .cwd
                 .join(path)
@@ -140,3 +142,4 @@ impl Root {
         None
     }
 }
+*/

@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -9,10 +10,10 @@ use oxc::diagnostics::OxcDiagnostic;
 
 use oxbuild_compiler::{compile, CompileOptions, CompiledOutput};
 
-use crate::cli::CliOptions;
+use crate::OxbuildOptions;
 
 pub struct WalkerBuilder {
-    options: Arc<CliOptions>,
+    options: Arc<OxbuildOptions>,
     compile_options: Arc<CompileOptions>,
     state: Arc<Mutex<State>>,
 }
@@ -22,16 +23,19 @@ struct State {
 }
 
 impl WalkerBuilder {
-    pub fn new(options: CliOptions) -> Self {
+    pub fn new(options: OxbuildOptions) -> Self {
+        let compile_options = CompileOptions::new(options.root.deref().to_path_buf())
+            .with_d_ts(options.isolated_declarations);
         Self {
-            compile_options: Arc::new(CompileOptions::new(options.cwd().clone())),
+            compile_options: Arc::new(compile_options),
             options: Arc::new(options),
             state: Default::default(),
         }
     }
 
     pub fn walk(&mut self, nthreads: usize) {
-        let inner = ignore::WalkBuilder::new(&self.options.input)
+        let inner = ignore::WalkBuilder::new(&self.options.src)
+            // TODO: use ignore to respect tsconfig include/exclude
             .ignore(false)
             .threads(nthreads)
             .hidden(false)
@@ -52,7 +56,7 @@ impl<'s> ParallelVisitorBuilder<'s> for WalkerBuilder {
 }
 
 pub struct Walker {
-    options: Arc<CliOptions>,
+    options: Arc<OxbuildOptions>,
     compile_options: Arc<CompileOptions>,
     state: Arc<Mutex<State>>,
 }
@@ -79,8 +83,8 @@ impl Walker {
     }
 
     fn get_output_path_for(&self, dir: &Path) -> PathBuf {
-        let rel = dir.strip_prefix(&self.options.input).unwrap();
-        self.options.output.join(rel)
+        let rel = dir.strip_prefix(&self.options.src).unwrap();
+        self.options.dist.join(rel)
     }
 }
 
