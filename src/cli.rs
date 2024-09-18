@@ -13,6 +13,7 @@ pub fn cli() -> ArgMatches {
         .arg(
             Arg::new("root")
                 .value_hint(ValueHint::DirPath)
+                .value_parser(path_parser)
                 .help("Path to the root directory of your project")
                 .long_help("Path to the root directory of your project.
 
@@ -23,6 +24,7 @@ By default, oxbuild will look for the nearest package.json starting at your CWD 
                 .short('c')
                 .long("config")
                 .value_hint(ValueHint::FilePath)
+                .value_parser(path_parser)
                 .help("Path to .oxbuildrc. Not yet supported"),
         )
         .arg(
@@ -30,6 +32,7 @@ By default, oxbuild will look for the nearest package.json starting at your CWD 
                 .short('p') // same as tsc
                 .long("tsconfig")
                 .value_hint(ValueHint::FilePath)
+                .value_parser(path_parser)
                 .help("Path to tsconfig.json")
                 .long_help("Path to tsconfig.json.
 
@@ -44,6 +47,10 @@ By default, Oxbuild will look for a tsconfig.json next to the nearest package.js
                 .long_help("Number of threads to use. Defaults to the number of logical cores available on the system."),
         )
         .get_matches()
+}
+
+fn path_parser(v: &str) -> Result<PathBuf> {
+    Ok(PathBuf::from(v))
 }
 
 #[non_exhaustive]
