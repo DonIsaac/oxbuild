@@ -36,8 +36,8 @@ pub struct CompiledOutput {
 pub fn compile(
     options: &CompileOptions,
     source_path: &Path,
+    source_text: &str,
 ) -> Result<CompiledOutput, Vec<OxcDiagnostic>> {
-    let source_text = fs::read_to_string(source_path).unwrap();
     // is this js? ts? tsx?
     let source_type = SourceType::from_path(source_path).unwrap();
     // get the name as a pretty string
@@ -51,7 +51,7 @@ pub fn compile(
         trivias,
         mut errors,
         panicked,
-    } = Parser::new(&allocator, &source_text, source_type).parse();
+    } = Parser::new(&allocator, source_text, source_type).parse();
 
     if panicked {
         debug_assert!(!errors.is_empty());
@@ -61,7 +61,7 @@ pub fn compile(
     let SemanticBuilderReturn {
         semantic,
         errors: semantic_errors,
-    } = SemanticBuilder::new(&source_text)
+    } = SemanticBuilder::new(source_text)
         .with_trivias(trivias.clone())
         .with_check_syntax_error(true)
         .build(&program);
@@ -79,7 +79,7 @@ pub fn compile(
     } = isolated_declarations(
         &allocator,
         &program,
-        &source_text,
+        source_text,
         source_name,
         trivias.clone(),
     )?;

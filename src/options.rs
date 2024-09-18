@@ -41,7 +41,7 @@ impl OxbuildOptions {
                     .with_context(|| {
                         format!("Failed to read TSConfig at {}", tsconfig_path.display())
                     })
-                    .and_then(TsConfig::new)
+                    .and_then(TsConfig::parse)
             })
             .transpose()?;
 
@@ -116,7 +116,7 @@ struct TsConfigCompilerOptions {
 }
 
 impl TsConfig {
-    pub fn new(mut source_text: String) -> Result<Self> {
+    pub fn parse(mut source_text: String) -> Result<Self> {
         json_strip_comments::strip(&mut source_text).unwrap();
 
         serde_json::from_str(&source_text).into_diagnostic()
