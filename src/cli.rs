@@ -46,6 +46,7 @@ By default, Oxbuild will look for a tsconfig.json next to the nearest package.js
         .get_matches()
 }
 
+#[derive(Debug)]
 #[non_exhaustive]
 pub struct CliOptions {
     pub root: Root,
