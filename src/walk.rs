@@ -1,36 +1,32 @@
-use std::ops::Deref;
 use std::{
     fs,
+    ops::Deref,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex},
+    sync::Arc,
 };
 
 use ignore::{DirEntry, Error as WalkError, ParallelVisitor, ParallelVisitorBuilder, WalkState};
-use oxc::diagnostics::OxcDiagnostic;
+use oxc::diagnostics::{Error, NamedSource, OxcDiagnostic};
 
 use crate::{
     compiler::{compile, CompileOptions, CompiledOutput},
-    OxbuildOptions,
+    DiagnosticSender, OxbuildOptions,
 };
 
 pub struct WalkerBuilder {
     options: Arc<OxbuildOptions>,
     compile_options: Arc<CompileOptions>,
-    state: Arc<Mutex<State>>,
-}
-#[derive(Debug, Default)]
-struct State {
-    errors: Vec<OxcDiagnostic>,
+    sender: DiagnosticSender,
 }
 
 impl WalkerBuilder {
-    pub fn new(options: OxbuildOptions) -> Self {
+    pub fn new(options: OxbuildOptions, sender: DiagnosticSender) -> Self {
         let compile_options = CompileOptions::new(options.root.deref().to_path_buf())
             .with_d_ts(options.isolated_declarations);
         Self {
             compile_options: Arc::new(compile_options),
             options: Arc::new(options),
-            state: Default::default(),
+            sender,
         }
     }
 
@@ -51,7 +47,7 @@ impl<'s> ParallelVisitorBuilder<'s> for WalkerBuilder {
         Box::new(Walker {
             options: Arc::clone(&self.options),
             compile_options: Arc::clone(&self.compile_options),
-            state: Arc::clone(&self.state),
+            sender: self.sender.clone(),
         })
     }
 }
@@ -59,7 +55,7 @@ impl<'s> ParallelVisitorBuilder<'s> for WalkerBuilder {
 pub struct Walker {
     options: Arc<OxbuildOptions>,
     compile_options: Arc<CompileOptions>,
-    state: Arc<Mutex<State>>,
+    sender: DiagnosticSender,
 }
 
 impl Walker {
@@ -73,11 +69,32 @@ impl Walker {
 
     #[must_use]
     fn compile(&self, path: &Path) -> Option<CompiledOutput> {
-        match compile(&self.compile_options, path) {
+        let source_text = match fs::read_to_string(path) {
+            Ok(text) => text,
+            Err(e) => {
+                let error = OxcDiagnostic::error(format!(
+                    "Failed to open source file at '{}': {}",
+                    path.display(),
+                    e
+                ));
+                self.sender
+                    .send(Some((path.to_path_buf(), vec![Error::new(error)])))
+                    .unwrap();
+                return None;
+            }
+        };
+
+        match compile(&self.compile_options, path, &source_text) {
             Ok(output) => Some(output),
-            Err(errors) => {
-                let mut state = self.state.lock().unwrap();
-                state.errors.extend(errors);
+            Err(diagnostics) => {
+                let source = Arc::new(NamedSource::new(path.to_string_lossy(), source_text));
+                let errors = diagnostics
+                    .into_iter()
+                    .map(|diagnostic| diagnostic.with_source_code(Arc::clone(&source)))
+                    .collect();
+                self.sender
+                    .send(Some((path.to_path_buf(), errors)))
+                    .unwrap();
                 None
             }
         }

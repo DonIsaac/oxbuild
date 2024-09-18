@@ -1,13 +1,18 @@
 mod cli;
 mod compiler;
 mod options;
+mod reporter;
 mod walk;
 
-use miette::Result;
-use std::time::Instant;
+use std::{thread, time::Instant};
 
-use cli::{cli, CliOptions};
-use options::OxbuildOptions;
+use miette::Result;
+
+use crate::{
+    cli::{cli, CliOptions},
+    options::OxbuildOptions,
+    reporter::{DiagnosticSender, Reporter},
+};
 
 #[allow(clippy::print_stdout)]
 fn main() -> Result<()> {
@@ -15,9 +20,19 @@ fn main() -> Result<()> {
     let opts = CliOptions::new(matches).and_then(OxbuildOptions::new)?;
     let num_threads = opts.num_threads.get();
 
+    let (mut reporter, report_sender) = Reporter::new();
+
     let start = Instant::now();
-    let mut walker = walk::WalkerBuilder::new(opts);
-    walker.walk(num_threads);
+
+    let handle = thread::spawn(move || {
+        let mut walker = walk::WalkerBuilder::new(opts, report_sender.clone());
+        walker.walk(num_threads);
+        report_sender.send(None).unwrap();
+    });
+
+    reporter.run();
+    handle.join().unwrap();
+
     let duration = start.elapsed();
 
     println!(
