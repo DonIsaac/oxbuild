@@ -4,6 +4,10 @@ _default:
 alias f := fix
 alias l := lint
 
+# Install tools needed for development. Make sure cargo-binstall is installed first.
+init:
+    cargo binstall cargo-shear taplo-cli typos-cli -y
+
 # Apply formatting fixes
 fmt:
     @cargo fmt --all

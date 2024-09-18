@@ -1,12 +1,17 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "*.md"
+      - "*.yml"
+      - "*.yaml"
+      - "!.github/workflows/ci.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

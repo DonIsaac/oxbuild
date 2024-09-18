@@ -21,6 +21,10 @@ After you've cloned this repository, here's what you need to get set up:
    # Click the link above for more ways to install just
    cargo binstall just
    ```
+3. Install other binaries for linting/checking:
+   ```sh
+   just init
+   ```
 
 Look through `Justfile` to see all available scripts, or just run `just` (with no arguments) to see a help message of all commands available.
 
