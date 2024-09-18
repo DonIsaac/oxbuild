@@ -12,6 +12,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
+
   format:
     name: Format
     runs-on: ubuntu-latest
@@ -52,3 +53,24 @@ jobs:
       - run: cargo check --all-targets --locked
       - run: cargo test --no-run
       - run: cargo nextest run
+
+  typos:
+    name: Spell Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@v1
+      - uses: crate-ci/typos@v1.24.5
+        with:
+          files: .
+
+  shear:
+    name: Check Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Boshen/setup-rust@main
+        with:
+          tools: cargo-shear
+          restore-cache: false
+      - run: cargo shear
+

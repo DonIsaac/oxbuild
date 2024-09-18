@@ -57,7 +57,7 @@ impl OxbuildOptions {
         } else {
             let src = root.join("src").to_path_buf();
             if !src.exists() {
-                return Err(Report::msg("src directory does not exist. Please explicity provide a path to your source files.".to_string()));
+                return Err(Report::msg("src directory does not exist. Please explicitly provide a path to your source files.".to_string()));
             }
             src
         };
