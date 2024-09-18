@@ -1,6 +1,7 @@
 use crate::cli::{CliOptions, Root};
 use std::{
     fs::{self},
+    num::NonZeroUsize,
     path::PathBuf,
 };
 
@@ -18,6 +19,7 @@ pub struct OxbuildOptions {
     pub src: PathBuf,
     /// Path to output folder where compiled code will be written.
     pub dist: PathBuf,
+    pub num_threads: NonZeroUsize,
     // package_json: PackageJson,
     // tsconfig: Option<PathBuf>, // TODO
 }
@@ -28,6 +30,7 @@ impl OxbuildOptions {
             root,
             config: _config,
             tsconfig,
+            num_threads,
         } = cli;
 
         let tsconfig = root
@@ -87,6 +90,7 @@ impl OxbuildOptions {
             isolated_declarations,
             src,
             dist,
+            num_threads,
         })
     }
 }
