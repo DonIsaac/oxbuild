@@ -24,6 +24,12 @@ impl Deref for Root {
     type Target = Path;
 
     fn deref(&self) -> &Self::Target {
+        self.as_ref()
+    }
+}
+
+impl AsRef<Path> for Root {
+    fn as_ref(&self) -> &Path {
         self.root.as_ref().unwrap_or(&self.cwd)
     }
 }
