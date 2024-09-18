@@ -1,6 +1,6 @@
 [package]
 name         = "oxbuild"
-version      = "0.1.1"
+version      = "0.1.1-prerelease.0"
 description  = "Ultra-fast typescript compiler"
 authors      = ["Don Isaac <don@donisaac.dev>"]
 license      = "MIT"
