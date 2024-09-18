@@ -29,7 +29,28 @@ impl Deref for Root {
 }
 
 impl Root {
-    pub fn new() -> Result<Self> {
+    /// Create a new [`Root`] with an explicitly provided project directory. If it is a relative
+    /// path, it will be joined to the current working directory and canonicalized, but otherwise
+    /// left unmodified.
+    pub fn new_explicit(project_dir: PathBuf) -> Result<Self> {
+        debug_assert!(project_dir.exists(), "project_dir must exist");
+        debug_assert!(project_dir.is_dir(), "project_dir must be a directory");
+
+        let cwd = env::current_dir()
+            .into_diagnostic()
+            .context("Failed to get cwd")?;
+
+        let project_dir = if project_dir.is_absolute() {
+            project_dir
+        } else {
+            cwd.join(project_dir).canonicalize().into_diagnostic()?
+        };
+
+        Self::new(cwd, Some(project_dir))
+    }
+
+    /// Create a new [`Root`] by looking for the nearest `package.json` file, starting at the cwd.
+    pub fn new_inferred() -> Result<Self> {
         let mut manager = PackageJsonManager::new();
         let cwd = env::current_dir()
             .into_diagnostic()
@@ -40,6 +61,10 @@ impl Root {
             package_json.parent().unwrap().to_path_buf()
         });
 
+        Self::new(cwd, root)
+    }
+
+    fn new(cwd: PathBuf, root: Option<PathBuf>) -> Result<Self> {
         let look_for_configs_in = root.as_ref().unwrap_or(&cwd);
 
         let stat = fs::read_dir(look_for_configs_in)

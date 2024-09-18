@@ -8,6 +8,10 @@ alias l := lint
 init:
     cargo binstall cargo-shear taplo-cli typos-cli -y
 
+# Run Oxbuild (dev build, not optimized)
+oxbuild *ARGS:
+    cargo oxbuild {{ARGS}}
+
 # Apply formatting fixes
 fmt:
     @cargo fmt --all
