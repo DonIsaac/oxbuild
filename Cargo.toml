@@ -40,3 +40,14 @@ too_many_lines          = "allow"
 must_use_candidate      = "allow"
 doc_markdown            = "allow"
 missing_const_for_fn    = "allow"
+
+# Set the settings for build scripts and proc-macros.
+[profile.dev.build-override]
+opt-level = 1
+
+# defaults: https://doc.rust-lang.org/cargo/reference/profiles.html#release
+[profile.release]
+codegen-units = 4
+strip         = "symbols"
+lto           = "thin"
+panic         = "abort"
