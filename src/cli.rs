@@ -11,6 +11,14 @@ pub(crate) use root::Root;
 pub fn cli() -> ArgMatches {
     command!()
         .arg(
+            Arg::new("root")
+                .value_hint(ValueHint::DirPath)
+                .help("Path to the root directory of your project")
+                .long_help("Path to the root directory of your project.
+
+By default, oxbuild will look for the nearest package.json starting at your CWD and walking up each parent. If you explicitly provide a path it will be used as-is and Oxbuild will not look for a package.json.")
+        )
+        .arg(
             Arg::new("config")
                 .short('c')
                 .long("config")
@@ -48,7 +56,20 @@ pub struct CliOptions {
 
 impl CliOptions {
     pub fn new(matches: ArgMatches) -> Result<Self> {
-        let root = Root::new()?;
+        let project_dir = matches.get_one::<String>("root").map(PathBuf::from);
+        let root = if let Some(project_dir) = project_dir {
+            let project_dir = if project_dir
+                .file_name()
+                .is_some_and(|name| name.to_string_lossy() == "package.json")
+            {
+                project_dir.parent().unwrap().to_path_buf()
+            } else {
+                project_dir.clone()
+            };
+            Root::new_explicit(project_dir)?
+        } else {
+            Root::new_inferred()?
+        };
 
         let config = root.resolve_file(
             matches.get_one::<PathBuf>("config"),
