@@ -70,6 +70,7 @@ cargo-dist-version = "0.22.1"
 ci = "github"
 # The installers to generate for each app
 installers = ["shell", "powershell", "npm"]
+publish-jobs = ["npm"]
 # Target platforms to build apps for (Rust target-triple syntax)
 targets = [
   "aarch64-apple-darwin",
