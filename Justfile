@@ -4,8 +4,6 @@ _default:
 alias f := fix
 alias l := lint
 
-version := `tq -f Cargo.toml 'package.version'`
-
 # Install tools needed for development. Make sure cargo-binstall is installed first.
 init:
     cargo binstall cargo-shear taplo-cli typos-cli -y
@@ -37,22 +35,9 @@ fix:
     just fmt
     git status
 
-# requires these tools:
-# - cargo-bump: https://github.com/wraithan/cargo-bump
-# - tomlq:      https://github.com/cryptaliagy/tomlq
-#
 # Make a release. `semver_kind` is major/minor/patch
 release semver_kind:
     # bail on uncommitted changes
     git diff --exit-code --name-only
-    # replace package.version in Cargo.toml
-    cargo bump {{semver_kind}}
-    # update Cargo.lock
-    cargo check
-    @echo Creating release: {{version}}
-    git add Cargo.toml Cargo.lock
-    git commit -m "release: {{version}}"
-    git tag v{{version}}
-    git push --tags
-    cargo publish
-
+    cargo ck
+    cargo release {{semver_kind}} --execute
