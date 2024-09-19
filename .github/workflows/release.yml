@@ -45,6 +45,22 @@ on:
       - '**[0-9]+.[0-9]+.[0-9]+*'
 
 jobs:
+
+  # Make sure we're not releasing broken code
+  prerelease:
+    name: "Pre-Release Verification"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: taiki-e/checkout-action@v1
+      - uses: Boshen/setup-rust@main
+        with:
+          cache-key: warm
+          tools: cargo-release
+          save-cache: false
+      - run: cargo check --all-targets --locked
+      - run: cargo release --dry-run 
+
+
   # Run 'cargo dist plan' (or host) to determine what tasks we need to do
   plan:
     runs-on: "ubuntu-20.04"
@@ -266,10 +282,30 @@ jobs:
 
           gh release create "${{ needs.plan.outputs.tag }}" --target "$RELEASE_COMMIT" $PRERELEASE_FLAG --title "$ANNOUNCEMENT_TITLE" --notes-file "$RUNNER_TEMP/notes.txt" artifacts/*
 
+  # Publish oxbuild to crates.io
+  publish-crates:
+    name: Publish to crates.io
+    needs:
+      - plan
+      - host
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@v1
+      - uses: Boshen/setup-rust@main
+        with:
+          cache-key: warm
+          tools: cargo-release
+          save-cache: false
+      - name: cargo login
+        run: cargo login ${{ secrets.CARGO_TOKEN }}
+      - name: cargo release publish
+        run: cargo release publish --allow-branch HEAD --no-confirm --execute
+
   announce:
     needs:
       - plan
       - host
+      - 'publish-crates'
     # use "always() && ..." to allow us to wait for all publish jobs while
     # still allowing individual publish jobs to skip themselves (for prereleases).
     # "host" however must run to completion, no skipping allowed!
