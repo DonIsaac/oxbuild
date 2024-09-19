@@ -5,10 +5,10 @@
 [![NPM Version](https://img.shields.io/npm/v/oxbuild)](https://npmjs.com/package/oxbuild)
 [![License](https://img.shields.io/crates/l/oxbuild)](./LICENSE)
 
-
 An ultra-fast `tsc`-like compiler built on top of [oxc](https://github.com/oxc-project/oxc).
 
 > #### 🚧 Under Construction
+>
 > Both Oxbuild and oxc are actively under construction and are not yet suitable for production use. If you find a bug in either project, we would love for you to open an issue on GitHub!
 
 ## Features

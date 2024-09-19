@@ -20,7 +20,6 @@ build:
 test:
     cargo test
 
-
 # Apply formatting fixes
 fmt:
     @cargo fmt --all
@@ -33,6 +32,7 @@ lint:
 fix:
     cargo clippy --no-deps --all-targets --all-features --fix --allow-staged
     just fmt
+    typos -w
     git status
 
 # Make a release. `semver_kind` is major/minor/patch

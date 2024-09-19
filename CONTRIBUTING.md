@@ -3,6 +3,7 @@
 Thanks for contributing to Oxbuild!
 
 The best ways to get involved are:
+
 1. Look through [good first issues](https://github.com/DonIsaac/oxbuild/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) and pick something that looks interesting
 2. Get involved with [oxc](https://github.com/oxc-project/oxc), which powers Oxbuild.
 
@@ -16,12 +17,12 @@ After you've cloned this repository, here's what you need to get set up:
    # Click the link above for more ways to install this
    cargo install cargo-binstall
    ```
-2. Install [`just`](https://github.com/casey/just?tab=readme-ov-file#installation), a `make`-like task runner.
+3. Install [`just`](https://github.com/casey/just?tab=readme-ov-file#installation), a `make`-like task runner.
    ```sh
    # Click the link above for more ways to install just
    cargo binstall just
    ```
-3. Install other binaries for linting/checking:
+4. Install other binaries for linting/checking:
    ```sh
    just init
    ```
@@ -29,6 +30,7 @@ After you've cloned this repository, here's what you need to get set up:
 Look through `Justfile` to see all available scripts, or just run `just` (with no arguments) to see a help message of all commands available.
 
 ## Running
+
 You can use `cargo oxbuild` as a `cargo run` shorthand. I personally find it easier than typing multiple CLI args each time :)
 
 ## Testing/Linting
