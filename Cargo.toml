@@ -61,7 +61,7 @@ lto      = "thin"
 # https://github.com/crate-ci/cargo-release/blob/master/docs/reference.md
 [workspace.metadata.release]
 pre-release-commit-message = "chore: release {{crate_name}} v{{version}}"
-sign                       = true
+sign-commit                = true
 sign-tag                   = true
 
 # Config for 'cargo dist'
