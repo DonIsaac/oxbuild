@@ -14,6 +14,15 @@ init:
 oxbuild *ARGS:
     cargo oxbuild {{ARGS}}
 
+# Alias for `cargo build`
+build:
+    cargo build
+
+# Alias for `cargo test`
+test:
+    cargo test
+
+
 # Apply formatting fixes
 fmt:
     @cargo fmt --all
@@ -28,11 +37,11 @@ fix:
     just fmt
     git status
 
-# Make a release. `semver_kind` is major/minor/patch
-#
 # requires these tools:
 # - cargo-bump: https://github.com/wraithan/cargo-bump
 # - tomlq:      https://github.com/cryptaliagy/tomlq
+#
+# Make a release. `semver_kind` is major/minor/patch
 release semver_kind:
     # bail on uncommitted changes
     git diff --exit-code --name-only
