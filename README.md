@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/DonIsaac/oxbuild/actions/workflows/ci.yml/badge.svg)](https://github.com/DonIsaac/oxbuild/actions/workflows/ci.yml)
 [![Crates.io Version](https://img.shields.io/crates/v/oxbuild)](https://crates.io/crates/oxbuild)
+[![NPM Version](https://img.shields.io/npm/v/oxbuild)](https://npmjs.com/package/oxbuild)
+[![License](https://img.shields.io/crates/l/oxbuild)](./LICENSE)
 
 
 An ultra-fast `tsc`-like compiler built on top of [oxc](https://github.com/oxc-project/oxc).
@@ -18,7 +20,13 @@ An ultra-fast `tsc`-like compiler built on top of [oxc](https://github.com/oxc-p
 
 ## Installation
 
-You can install `oxbuild` from [crates.io](https://crates.io/crates/oxbuild).
+You can install `oxbuild` from [npm](https://www.npmjs.com/package/oxbuild).
+
+```sh
+npm install -g oxbuild
+```
+
+Or from [crates.io](https://crates.io/crates/oxbuild).
 
 ```sh
 # using cargo-binstall (recommended)
