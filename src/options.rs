@@ -71,7 +71,6 @@ impl OxbuildOptions {
             debug!("Using default src directory");
             let src = root.join("src").to_path_buf();
             if !src.exists() {
-                trace!("Creating src directory at '{}'", src.display());
                 return Err(Report::msg("src directory does not exist. Please explicitly provide a path to your source files.".to_string()));
             }
             src
@@ -89,21 +88,22 @@ impl OxbuildOptions {
                 "Resolving outDir from tsconfig.json: '{}'",
                 out_dir.display()
             );
-            root.resolve(out_dir)
+            root.join(out_dir)
         } else {
             debug!("Using default dist directory");
-            let dist = root.join("dist").to_path_buf();
-            if !dist.exists() {
-                trace!("Creating dist directory at '{}'", dist.display());
-                fs::create_dir(&dist).into_diagnostic()?;
-            }
-            // TODO: clean dist dir?
-            dist
+            root.join("dist").to_path_buf()
         };
+        // TODO: clean dist dir?
+        if !dist.exists() {
+            trace!("Creating dist directory at '{}'", dist.display());
+            fs::create_dir_all(&dist).into_diagnostic()?;
+        }
         assert!(dist.is_dir()); // FIXME: handle errors
+        let dist = dist
+            .canonicalize()
+            .into_diagnostic()
+            .wrap_err("Failed to canonicalize dist directory")?;
         trace!("dist directory: '{}'", dist.display());
-
-        // let strip_internal = co.and_then(|co| co.)
 
         // no tsconfig means they're using JavaScript. We can't emit .d.ts files in that case.
         let isolated_declarations = co.and_then(|co| {
@@ -126,6 +126,7 @@ impl OxbuildOptions {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct TsConfig {
     // TODO: tsconfig extends
     compiler_options: Option<TsConfigCompilerOptions>,
