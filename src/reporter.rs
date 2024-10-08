@@ -10,6 +10,7 @@ pub struct Reporter {
 
 impl Reporter {
     pub fn new() -> (Self, DiagnosticSender) {
+        trace!("Creating diagnostics reporter");
         let inner = DiagnosticService::default();
         let sender = inner.sender().clone();
         (Self { inner }, sender)

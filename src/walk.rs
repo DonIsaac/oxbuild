@@ -31,6 +31,7 @@ impl WalkerBuilder {
     }
 
     pub fn walk(&mut self, nthreads: usize) {
+        debug!("Starting walker with {} threads", nthreads);
         let inner = ignore::WalkBuilder::new(&self.options.src)
             // TODO: use ignore to respect tsconfig include/exclude
             .ignore(false)
@@ -69,6 +70,7 @@ impl Walker {
 
     #[must_use]
     fn compile(&self, path: &Path) -> Option<CompiledOutput> {
+        trace!("Compiling '{}'", path.display());
         let source_text = match fs::read_to_string(path) {
             Ok(text) => text,
             Err(e) => {

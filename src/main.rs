@@ -6,6 +6,9 @@ mod walk;
 
 use std::{thread, time::Instant};
 
+extern crate pretty_env_logger;
+#[macro_use]
+extern crate log;
 use miette::Result;
 
 use crate::{
@@ -16,6 +19,7 @@ use crate::{
 
 #[allow(clippy::print_stdout)]
 fn main() -> Result<()> {
+    pretty_env_logger::init();
     let matches = cli();
     let opts = CliOptions::new(matches).and_then(OxbuildOptions::new)?;
     let num_threads = opts.num_threads.get();
