@@ -53,6 +53,13 @@ Assuming you are in your project's root directory and your source code is all in
 oxbuild
 ```
 
+If `oxbuild` is behaving in an unexpected way, please run it with debug logs and
+create a new issue on GitHub.
+
+```sh
+RUST_LOG=debug oxbuild
+```
+
 ### TSConfig Support
 
 Oxbuild will respect `rootDir` and `outDir` settings in your `tsconfig.json`.

@@ -77,6 +77,7 @@ impl CliOptions {
         } else {
             Root::new_inferred()?
         };
+        debug!("Root directory: '{}'", root.display());
 
         let config = root.resolve_file(
             matches.get_one::<PathBuf>("config"),
