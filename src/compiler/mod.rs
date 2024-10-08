@@ -4,7 +4,8 @@ mod options;
 use oxc::{
     ast::{ast::Program, Trivias},
     codegen::CodegenReturn,
-    transformer::{ES2015Options, ReactOptions},
+    isolated_declarations::IsolatedDeclarationsOptions,
+    transformer::{ES2015Options, JsxOptions},
 };
 use std::{fs, path::Path};
 
@@ -74,8 +75,8 @@ pub fn compile(
 
     // produce .d.ts files
     let CodegenReturn {
-        source_text: id,
-        source_map: id_map,
+        code: id,
+        map: id_map,
     } = isolated_declarations(
         &allocator,
         &program,
@@ -85,8 +86,8 @@ pub fn compile(
     )?;
 
     let CodegenReturn {
-        source_text: output_text,
-        source_map,
+        code: output_text,
+        map: source_map,
     } = transform(&allocator, semantic, &mut program, source_path);
 
     Ok(CompiledOutput {
@@ -108,7 +109,16 @@ fn isolated_declarations<'a>(
 ) -> Result<CodegenReturn, Vec<OxcDiagnostic>> {
     let IsolatedDeclarationsReturn {
         program, errors, ..
-    } = IsolatedDeclarations::new(allocator).build(program);
+    } = IsolatedDeclarations::new(
+        allocator,
+        source_text,
+        &trivias,
+        // TODO: get from tsconfig.json
+        IsolatedDeclarationsOptions {
+            strip_internal: false,
+        },
+    )
+    .build(program);
 
     if !errors.is_empty() {
         return Err(errors);
@@ -140,7 +150,7 @@ fn transform<'a>(
     let source_text = semantic.source_text();
 
     let options = TransformOptions {
-        react: ReactOptions {
+        react: JsxOptions {
             jsx_plugin: true,
             display_name_plugin: true,
             jsx_source_plugin: true,
@@ -152,7 +162,7 @@ fn transform<'a>(
     let transformer = Transformer::new(
         allocator,
         source_path,
-        *semantic.source_type(),
+        // *semantic.source_type(),
         source_text,
         trivias.clone(),
         options,
