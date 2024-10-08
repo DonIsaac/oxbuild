@@ -17,7 +17,7 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow              = { version = "1.0.89" }
-clap                = { version = "4.5.17", features = ["cargo"] }
+clap                = { version = "4.5.20", features = ["cargo"] }
 ignore              = { version = "0.4.23" }
 json-strip-comments = { version = "1.0.4" }
 miette              = { version = "7.2.0", features = ["fancy"] }
