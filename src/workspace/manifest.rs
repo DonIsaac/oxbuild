@@ -45,11 +45,11 @@ impl Manifest {
         let package_json: PackageJson = serde_json::from_str(&package_json_raw)
             .into_diagnostic()
             .with_context(|| {
-                format!(
-                    "Failed to parse package.json at {}",
-                    package_json_path.display()
-                )
-            })?;
+            format!(
+                "Failed to parse package.json at {}",
+                package_json_path.display()
+            )
+        })?;
 
         Ok(Self {
             dir: package_folder,

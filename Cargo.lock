@@ -441,6 +441,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32085ea23f3234fc7846555e85283ba4de91e21016dc0455a16286d87a292d64"
 
 [[package]]
+name = "glob"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
+
+[[package]]
 name = "globset"
 version = "0.4.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -705,6 +711,8 @@ version = "0.1.4"
 dependencies = [
  "anyhow",
  "clap",
+ "compact_str",
+ "glob",
  "ignore",
  "json-strip-comments",
  "miette",
@@ -713,6 +721,7 @@ dependencies = [
  "serde",
  "serde_json",
  "static_assertions",
+ "thiserror",
  "tsconfig",
 ]
 
@@ -1486,7 +1495,7 @@ checksum = "ef927ca75afb808a4d64dd374f00a2adf8d0fcff8e7b184af886c3c87ec4a3f3"
 [[package]]
 name = "tsconfig"
 version = "0.3.1"
-source = "git+https://github.com/DonIsaac/tsconfig#e33c86ba206dbf27fd0bab33afeb13440825a246"
+source = "git+https://github.com/DonIsaac/tsconfig#ad1bec1d8ef725612c15bfa1ff4675ffc28b380b"
 dependencies = [
  "json_comments",
  "regex",

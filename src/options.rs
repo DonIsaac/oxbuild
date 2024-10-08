@@ -1,4 +1,4 @@
-use crate::cli::{CliOptions, Root};
+use crate::{cli::CliOptions, Root};
 use std::{
     fs::{self},
     num::NonZeroUsize,
