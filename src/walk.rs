@@ -148,8 +148,10 @@ impl ParallelVisitor for Walker {
         }
 
         // foo.d.ts
-        let dts_path = output_path.with_extension("d.ts");
-        fs::write(dts_path, declarations).unwrap();
+        if let Some(declarations) = declarations {
+            let dts_path = output_path.with_extension("d.ts");
+            fs::write(dts_path, declarations).unwrap();
+        }
 
         // foo.d.ts.map
         if let Some(declarations_map) = declarations_map {

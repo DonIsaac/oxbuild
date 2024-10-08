@@ -106,11 +106,6 @@ impl OxbuildOptions {
             num_threads,
         })
     }
-
-    #[inline]
-    pub fn emit_declarations(&self) -> bool {
-        self.isolated_declarations.is_some()
-    }
 }
 
 #[derive(Debug, Deserialize)]
