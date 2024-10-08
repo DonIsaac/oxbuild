@@ -3,6 +3,7 @@ mod compiler;
 mod options;
 mod reporter;
 mod walk;
+mod workspace;
 
 use std::{thread, time::Instant};
 
@@ -12,6 +13,7 @@ use crate::{
     cli::{cli, CliOptions},
     options::OxbuildOptions,
     reporter::{DiagnosticSender, Reporter},
+    workspace::{Manifest, Root},
 };
 
 #[allow(clippy::print_stdout)]

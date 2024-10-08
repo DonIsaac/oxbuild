@@ -9,7 +9,7 @@ use miette::{IntoDiagnostic, Report, Result, WrapErr};
 use package_json::PackageJsonManager;
 
 #[derive(Debug)]
-pub(crate) struct Root {
+pub struct Root {
     /// Current working directory from where oxbuild  was run.
     cwd: PathBuf,
     /// Path to directory containing nearest `package.json` file.
