@@ -22,7 +22,7 @@ pub struct WalkerBuilder {
 impl WalkerBuilder {
     pub fn new(options: OxbuildOptions, sender: DiagnosticSender) -> Self {
         let compile_options = CompileOptions::new(options.root.deref().to_path_buf())
-            .with_d_ts(options.isolated_declarations);
+            .with_d_ts(options.isolated_declarations.clone());
         Self {
             compile_options: Arc::new(compile_options),
             options: Arc::new(options),
@@ -148,8 +148,10 @@ impl ParallelVisitor for Walker {
         }
 
         // foo.d.ts
-        let dts_path = output_path.with_extension("d.ts");
-        fs::write(dts_path, declarations).unwrap();
+        if let Some(declarations) = declarations {
+            let dts_path = output_path.with_extension("d.ts");
+            fs::write(dts_path, declarations).unwrap();
+        }
 
         // foo.d.ts.map
         if let Some(declarations_map) = declarations_map {

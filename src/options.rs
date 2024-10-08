@@ -9,12 +9,14 @@ use miette::{IntoDiagnostic, Report, Result, WrapErr};
 // use package_json::{PackageJson, PackageJsonManager};
 use serde::Deserialize;
 
-// use crate::error::AnyError;
-
+#[derive(Debug)]
 pub struct OxbuildOptions {
     pub root: Root,
-    /// Emit `.d.ts` files using `isolatedModules` option.
-    pub isolated_declarations: bool,
+    /// Emit `.d.ts` files using `isolatedDeclarations` option.
+    ///
+    /// When [`Some`], declarations will be emitted using the provided options.
+    /// When [`None`], declaration emit is disabled.
+    pub isolated_declarations: Option<DeclarationsOptions>,
     /// Path to the folder containing source files to compile.
     pub src: PathBuf,
     /// Path to output folder where compiled code will be written.
@@ -22,6 +24,11 @@ pub struct OxbuildOptions {
     pub num_threads: NonZeroUsize,
     // package_json: PackageJson,
     // tsconfig: Option<PathBuf>, // TODO
+}
+
+#[derive(Debug, Clone)]
+pub struct DeclarationsOptions {
+    pub strip_internal: bool,
 }
 
 impl OxbuildOptions {
@@ -80,10 +87,16 @@ impl OxbuildOptions {
         };
         assert!(dist.is_dir()); // FIXME: handle errors
 
-        let isolated_declarations = co
-            .and_then(|co| co.isolated_declarations)
-            // no tsconfig means they're using JavaScript. We can't emit .d.ts files in that case.
-            .unwrap_or(false);
+        // let strip_internal = co.and_then(|co| co.)
+
+        // no tsconfig means they're using JavaScript. We can't emit .d.ts files in that case.
+        let isolated_declarations = co.and_then(|co| {
+            co.isolated_declarations
+                .unwrap_or(false)
+                .then(|| DeclarationsOptions {
+                    strip_internal: co.strip_internal.unwrap_or(false),
+                })
+        });
 
         Ok(Self {
             root,
@@ -112,6 +125,7 @@ struct TsConfigCompilerOptions {
     // TODO: parse more fields as needed
     root_dir: Option<PathBuf>,
     out_dir: Option<PathBuf>,
+    strip_internal: Option<bool>,
     isolated_declarations: Option<bool>,
 }
 
