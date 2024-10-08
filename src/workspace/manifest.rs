@@ -4,6 +4,8 @@ use miette::{Context as _, IntoDiagnostic as _, Result};
 use package_json::PackageJson;
 use tsconfig::TsConfig;
 
+use super::workspace_globs::Workspaces;
+
 /// A package manifest.
 ///
 /// May be a single package, a package in a monorepo, or the monorepo root itself.
@@ -12,6 +14,7 @@ pub struct Manifest {
     dir: PathBuf,
     package_json: PackageJson,
     tsconfig: Option<TsConfig>,
+    workspaces: Option<Workspaces>,
 }
 
 impl Manifest {
@@ -51,10 +54,16 @@ impl Manifest {
             )
         })?;
 
+        let workspaces = package_json
+            .workspaces
+            .as_ref()
+            .map(|workspaces| Workspaces::from_iter(workspaces));
+
         Ok(Self {
             dir: package_folder,
             package_json,
             tsconfig,
+            workspaces,
         })
     }
 }

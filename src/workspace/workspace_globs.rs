@@ -13,12 +13,13 @@ use thiserror::{self, Error};
 ///
 /// Supports exclusion patterns (starting with `!`).
 #[derive(Debug, Clone)]
-pub struct Workspaces {
-    pub(super) include_globs: Vec<CompactString>,
-    pub(super) exclude_globs: Option<Vec<CompactString>>,
+pub struct Workspaces<S = CompactString> {
+    pub(super) include_globs: Vec<S>,
+    pub(super) exclude_globs: Option<Vec<S>>,
     // nohoist
 }
-impl<S: AsRef<str>> FromIterator<S> for Workspaces {
+
+impl<S: AsRef<str>> FromIterator<S> for Workspaces<CompactString> {
     fn from_iter<T: IntoIterator<Item = S>>(iter: T) -> Self {
         let globs = iter.into_iter();
         let hint = globs.size_hint();
@@ -51,8 +52,8 @@ impl<S: AsRef<str>> FromIterator<S> for Workspaces {
     }
 }
 
-impl Workspaces {
-    pub fn new(include: Vec<CompactString>, exclude: Option<Vec<CompactString>>) -> Self {
+impl<S: AsRef<str> + AsRef<Path> + ToString> Workspaces<S> {
+    pub fn new(include: Vec<S>, exclude: Option<Vec<S>>) -> Self {
         Self {
             include_globs: include,
             exclude_globs: exclude,
@@ -60,12 +61,12 @@ impl Workspaces {
     }
 
     /// Glob patterns of packages to include in the workspace
-    pub fn included(&self) -> &[CompactString] {
+    pub fn included(&self) -> &[S] {
         self.include_globs.as_slice()
     }
 
     /// Glob patterns of packages to exclude from the workspace
-    pub fn excluded(&self) -> Option<&[CompactString]> {
+    pub fn excluded(&self) -> Option<&[S]> {
         self.exclude_globs.as_deref()
     }
 
@@ -108,7 +109,10 @@ struct WorkspaceIter {
 }
 
 impl WorkspaceIter {
-    fn new(root: &Path, workspaces: &Workspaces) -> (Self, Vec<BadGlobError>) {
+    fn new<S: AsRef<Path> + AsRef<str> + ToString>(
+        root: &Path,
+        workspaces: &Workspaces<S>,
+    ) -> (Self, Vec<BadGlobError>) {
         let included = workspaces.included();
         let mut include = Vec::with_capacity(included.len());
         let mut errors = Vec::with_capacity(included.len());
@@ -135,7 +139,7 @@ impl WorkspaceIter {
         let exclude = workspaces.excluded().map(|exclude| {
             let mut exclude_patterns = Vec::with_capacity(exclude.len());
             for raw_pattern in exclude {
-                match Pattern::new(raw_pattern) {
+                match Pattern::new(raw_pattern.as_ref()) {
                     Ok(pattern) => exclude_patterns.push(pattern),
                     Err(e) => errors.push(BadGlobError::bad_pattern(
                         raw_pattern.to_string(),
