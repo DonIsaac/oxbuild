@@ -4,7 +4,7 @@ mod options;
 mod reporter;
 mod walk;
 
-use std::{thread, time::Instant};
+use std::{process::ExitCode, thread, time::Instant};
 
 extern crate pretty_env_logger;
 #[macro_use]
@@ -18,7 +18,7 @@ use crate::{
 };
 
 #[allow(clippy::print_stdout)]
-fn main() -> Result<()> {
+fn main() -> Result<ExitCode> {
     pretty_env_logger::init();
     let matches = cli();
     let opts = CliOptions::new(matches).and_then(OxbuildOptions::new)?;
@@ -47,14 +47,12 @@ fn main() -> Result<()> {
             "Finished in {:2}ms with {num_errors} errors and {num_warnings} warnings using {num_threads} threads.",
             duration.as_millis()
         );
+    } else {
+        println!(
+            "Finished in {:2}ms using {num_threads} threads.",
+            duration.as_millis()
+        );
     }
-    println!(
-        "Finished in {:2}ms using {num_threads} threads.",
-        duration.as_millis()
-    );
 
-    if did_fail {
-        std::process::exit(1);
-    }
-    Ok(())
+    Ok(ExitCode::from(u8::from(did_fail)))
 }
