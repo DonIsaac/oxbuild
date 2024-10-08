@@ -24,13 +24,15 @@ use oxc::{
 
 pub use options::CompileOptions;
 
+use crate::options::DeclarationsOptions;
+
 static_assertions::assert_impl_all!(CompileOptions: Send, Sync);
 
 #[derive(Debug, Clone)]
 pub struct CompiledOutput {
     pub source_text: String,
     pub source_map: Option<SourceMap>,
-    pub declarations: String,
+    pub declarations: Option<String>,
     pub declarations_map: Option<SourceMap>,
 }
 
@@ -74,16 +76,28 @@ pub fn compile(
     /* ========================== TRANSFORM ========================== */
 
     // produce .d.ts files
-    let CodegenReturn {
-        code: id,
-        map: id_map,
-    } = isolated_declarations(
-        &allocator,
-        &program,
-        source_text,
-        source_name,
-        trivias.clone(),
-    )?;
+    let id = options
+        .declarations_options()
+        .map(|opts| {
+            isolated_declarations(
+                opts,
+                &allocator,
+                &program,
+                source_text,
+                source_name,
+                trivias.clone(),
+            )
+        })
+        .transpose();
+
+    let (id, id_map) = match id {
+        Ok(Some(CodegenReturn { code, map })) => (Some(code), Some(map)),
+        Ok(None) => (None, None),
+        Err(id_errors) => {
+            errors.extend(id_errors);
+            (None, None)
+        }
+    };
 
     let CodegenReturn {
         code: output_text,
@@ -93,14 +107,13 @@ pub fn compile(
     Ok(CompiledOutput {
         source_text: output_text,
         source_map,
-        // declarations: String::new(),
-        // declarations_map: None,
         declarations: id,
-        declarations_map: id_map,
+        declarations_map: id_map.flatten(),
     })
 }
 
 fn isolated_declarations<'a>(
+    options: &DeclarationsOptions,
     allocator: &'a Allocator,
     program: &Program<'a>,
     source_text: &'a str,
@@ -113,9 +126,8 @@ fn isolated_declarations<'a>(
         allocator,
         source_text,
         &trivias,
-        // TODO: get from tsconfig.json
         IsolatedDeclarationsOptions {
-            strip_internal: false,
+            strip_internal: options.strip_internal,
         },
     )
     .build(program);
@@ -162,7 +174,6 @@ fn transform<'a>(
     let transformer = Transformer::new(
         allocator,
         source_path,
-        // *semantic.source_type(),
         source_text,
         trivias.clone(),
         options,
@@ -177,7 +188,6 @@ fn transform<'a>(
 
     let codegen = Codegen::new()
         .enable_comment(source_text, trivias.clone(), Default::default())
-        .with_capacity(source_text.len())
         .enable_source_map(source_path.as_os_str().to_str().unwrap(), source_text);
     //.with_mangler(Some(Default::default()));
 
