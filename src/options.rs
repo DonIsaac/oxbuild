@@ -5,6 +5,7 @@ use std::{
     path::PathBuf,
 };
 
+use log::{debug, trace};
 use miette::{IntoDiagnostic, Report, Result, WrapErr};
 // use package_json::{PackageJson, PackageJsonManager};
 use serde::Deserialize;
@@ -43,6 +44,7 @@ impl OxbuildOptions {
         let tsconfig = root
             .resolve_file(tsconfig.as_ref(), ["tsconfig.json"])?
             .map(|tsconfig_path| {
+                debug!("Reading tsconfig at '{}'", tsconfig_path.display());
                 fs::read_to_string(&tsconfig_path)
                     .into_diagnostic()
                     .with_context(|| {
@@ -60,8 +62,13 @@ impl OxbuildOptions {
 
         let co = tsconfig.as_ref().and_then(TsConfig::compiler_options);
         let src = if let Some(root_dir) = co.and_then(|co| co.root_dir.as_ref()) {
+            debug!(
+                "Resolving rootDir from tsconfig.json: '{}'",
+                root_dir.display()
+            );
             root.resolve(root_dir)
         } else {
+            debug!("Using default src directory");
             let src = root.join("src").to_path_buf();
             if !src.exists() {
                 return Err(Report::msg("src directory does not exist. Please explicitly provide a path to your source files.".to_string()));
@@ -74,28 +81,38 @@ impl OxbuildOptions {
                 src.display()
             )));
         }
+        trace!("src directory: '{}'", src.display());
 
         let dist = if let Some(out_dir) = co.and_then(|co| co.out_dir.as_ref()) {
-            root.resolve(out_dir)
+            debug!(
+                "Resolving outDir from tsconfig.json: '{}'",
+                out_dir.display()
+            );
+            root.join(out_dir)
         } else {
-            let dist = root.join("dist").to_path_buf();
-            if !dist.exists() {
-                fs::create_dir(&dist).into_diagnostic()?;
-            }
-            // TODO: clean dist dir?
-            dist
+            debug!("Using default dist directory");
+            root.join("dist").to_path_buf()
         };
+        // TODO: clean dist dir?
+        if !dist.exists() {
+            trace!("Creating dist directory at '{}'", dist.display());
+            fs::create_dir_all(&dist).into_diagnostic()?;
+        }
         assert!(dist.is_dir()); // FIXME: handle errors
-
-        // let strip_internal = co.and_then(|co| co.)
+        let dist = dist
+            .canonicalize()
+            .into_diagnostic()
+            .wrap_err("Failed to canonicalize dist directory")?;
+        trace!("dist directory: '{}'", dist.display());
 
         // no tsconfig means they're using JavaScript. We can't emit .d.ts files in that case.
         let isolated_declarations = co.and_then(|co| {
-            co.isolated_declarations
-                .unwrap_or(false)
-                .then(|| DeclarationsOptions {
+            co.isolated_declarations.unwrap_or(false).then(|| {
+                debug!("Enabling .d.ts emit");
+                DeclarationsOptions {
                     strip_internal: co.strip_internal.unwrap_or(false),
-                })
+                }
+            })
         });
 
         Ok(Self {
@@ -109,6 +126,7 @@ impl OxbuildOptions {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct TsConfig {
     // TODO: tsconfig extends
     compiler_options: Option<TsConfigCompilerOptions>,

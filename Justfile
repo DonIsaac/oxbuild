@@ -16,6 +16,12 @@ oxbuild *ARGS:
 build:
     cargo build
 
+# Create a release build and copy it to ~/.bin
+oxbuild-local:
+    cargo build --release --bin oxbuild
+    rm ~/.bin/oxbuild
+    cp target/release/oxbuild ~/.bin/oxbuild
+
 # Alias for `cargo test`
 test:
     cargo test

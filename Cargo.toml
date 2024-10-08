@@ -1,6 +1,6 @@
 [package]
 name         = "oxbuild"
-version      = "0.1.4"
+version      = "0.1.5"
 description  = "Ultra-fast typescript compiler"
 authors      = ["Don Isaac <don@donisaac.dev>"]
 license      = "MIT"
@@ -22,9 +22,11 @@ compact_str         = { version = "0.8.0" }
 glob                = { version = "0.3.1" }
 ignore              = { version = "0.4.23" }
 json-strip-comments = { version = "1.0.4" }
+log                 = { version = "0.4.22" }
 miette              = { version = "7.2.0", features = ["fancy"] }
 oxc                 = { version = "0.31.0", features = ["full"] }
 package-json        = { version = "0.4.0" }
+pretty_env_logger   = { version = "0.5.0" }
 serde               = { version = "1.0.210" }
 serde_json          = { version = "1.0.128" }
 static_assertions   = { version = "1.1.0" }
@@ -53,9 +55,10 @@ opt-level = 1
 # defaults: https://doc.rust-lang.org/cargo/reference/profiles.html#release
 [profile.release]
 codegen-units = 4
-strip         = "symbols"
+debug         = false     # set to `true` for debugging
+strip         = "symbols" # set to `false` for debugging
 lto           = "thin"
-panic         = "abort"
+panic         = "abort"   # set to `unwind` for backtraces
 
 # The profile that 'cargo dist' will build with
 [profile.dist]
