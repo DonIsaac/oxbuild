@@ -18,4 +18,14 @@ impl Reporter {
     pub fn run(&mut self) {
         self.inner.run();
     }
+
+    #[inline]
+    pub fn errors_count(&self) -> usize {
+        self.inner.errors_count()
+    }
+
+    #[inline]
+    pub fn warnings_count(&self) -> usize {
+        self.inner.warnings_count()
+    }
 }

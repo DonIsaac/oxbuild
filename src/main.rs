@@ -36,11 +36,23 @@ fn main() -> Result<()> {
     handle.join().unwrap();
 
     let duration = start.elapsed();
+    let num_errors = reporter.errors_count();
+    let num_warnings = reporter.warnings_count();
+    let did_fail = num_errors > 0;
 
+    if num_errors > 0 && num_warnings > 0 {
+        println!(
+            "Finished in {:2}ms with {num_errors} errors and {num_warnings} warnings using {num_threads} threads.",
+            duration.as_millis()
+        );
+    }
     println!(
         "Finished in {:2}ms using {num_threads} threads.",
         duration.as_millis()
     );
 
+    if did_fail {
+        std::process::exit(1);
+    }
     Ok(())
 }
