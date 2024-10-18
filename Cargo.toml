@@ -16,7 +16,7 @@ name = "oxbuild"
 path = "src/main.rs"
 
 [dependencies]
-anyhow              = { version = "1.0.89" }
+anyhow              = { version = "1.0.90" }
 clap                = { version = "4.5.20", features = ["cargo"] }
 compact_str         = { version = "0.8.0" }
 glob                = { version = "0.3.1" }
@@ -28,7 +28,7 @@ oxc                 = { version = "0.31.0", features = ["full"] }
 package-json        = { version = "0.4.0" }
 pretty_env_logger   = { version = "0.5.0" }
 serde               = { version = "1.0.210" }
-serde_json          = { version = "1.0.128" }
+serde_json          = { version = "1.0.129" }
 static_assertions   = { version = "1.1.0" }
 thiserror           = { version = "1.0.64" }
 # use our own fork
