@@ -11,7 +11,7 @@ use ignore::{DirEntry, Error as WalkError, ParallelVisitor, ParallelVisitorBuild
 use oxc::diagnostics::{Error, NamedSource, OxcDiagnostic};
 
 use crate::{
-    compiler::{compile, CompileOptions, CompiledOutput},
+    compiler::{CompiledOutput, CompilerOptions, OxBuild},
     workspace::{Package, PackageError, Workspace},
     DiagnosticSender,
 };
@@ -94,17 +94,14 @@ impl MonorepoWalker {
 }
 
 pub struct WalkerBuilder {
-    options: Arc<CompileOptions>,
+    options: Arc<CompilerOptions>,
     sender: DiagnosticSender,
 }
 
 impl WalkerBuilder {
-    pub fn new(options: Package, sender: DiagnosticSender) -> Self {
-        let compile_options = CompileOptions::from(options);
-        Self {
-            options: Arc::new(compile_options),
-            sender,
-        }
+    pub fn new(package: Package, sender: DiagnosticSender) -> Self {
+        let options = Arc::new(CompilerOptions::from(package));
+        Self { options, sender }
     }
 
     pub fn walk(&mut self, nthreads: usize) {
@@ -123,15 +120,14 @@ impl WalkerBuilder {
 impl<'s> ParallelVisitorBuilder<'s> for WalkerBuilder {
     fn build(&mut self) -> Box<dyn ParallelVisitor + 's> {
         Box::new(Walker {
-            options: Arc::clone(&self.options),
+            compiler: OxBuild::new(Arc::clone(&self.options)),
             sender: self.sender.clone(),
         })
     }
 }
 
 pub struct Walker {
-    options: Arc<CompileOptions>,
-    // compile_options: Arc<CompileOptions>,
+    compiler: OxBuild,
     sender: DiagnosticSender,
 }
 
@@ -145,7 +141,7 @@ impl Walker {
     }
 
     #[must_use]
-    fn compile(&self, path: &Path) -> Option<CompiledOutput> {
+    fn compile(&mut self, path: &Path) -> Option<CompiledOutput> {
         trace!("Compiling '{}'", path.display());
         let source_text = match fs::read_to_string(path) {
             Ok(text) => text,
@@ -162,7 +158,7 @@ impl Walker {
             }
         };
 
-        match compile(&self.options, path, &source_text) {
+        match self.compiler.run(&source_text, path) {
             Ok(output) => Some(output),
             Err(diagnostics) => {
                 let source = Arc::new(NamedSource::new(path.to_string_lossy(), source_text));
@@ -179,8 +175,8 @@ impl Walker {
     }
 
     fn get_output_path_for(&self, dir: &Path) -> PathBuf {
-        let rel = dir.strip_prefix(self.options.src()).unwrap();
-        self.options.dist().join(rel)
+        let rel = dir.strip_prefix(self.compiler.options.src()).unwrap();
+        self.compiler.options.dist().join(rel)
     }
 }
 

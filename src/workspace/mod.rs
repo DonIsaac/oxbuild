@@ -15,7 +15,7 @@ use yaml_rust::{yaml::Hash as YamlHash, Yaml, YamlLoader};
 
 use error::AnyhowWrap;
 pub use package::{Package, PackageError};
-pub use tsconfig::{TsConfig, TsConfigCompilerOptions};
+pub use tsconfig::*;
 
 #[derive(Debug)]
 pub struct Workspace {

@@ -18,12 +18,14 @@ path = "src/main.rs"
 [dependencies]
 anyhow              = { version = "1.0.90" }
 clap                = { version = "4.5.20", features = ["cargo"] }
-glob = "0.3.2"
+glob                = { version = "0.3.2" }
 ignore              = { version = "0.4.23" }
 json-strip-comments = { version = "1.0.4" }
 log                 = { version = "0.4.22" }
-miette              = { version = "7.5.0", features = ["fancy"] }
-oxc                 = { version = "0.31.0", features = ["full"] }
+# miette              = { version = "7.5.0", features = ["fancy"] }
+oxc                 = { version = "0.66.0", features = ["full"] }
+oxc-miette          = { version = "2.2.1", features = ["fancy", "owo-colors", "terminal_size"] }
+oxc_sourcemap       = { version = "3.0.0", features = ["rayon"] }
 package-json        = { version = "0.4.0" }
 pretty_env_logger   = { version = "0.5.0" }
 serde               = { version = "1.0.210" }

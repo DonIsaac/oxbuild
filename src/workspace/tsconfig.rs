@@ -27,7 +27,15 @@ pub struct TsConfigCompilerOptions {
     /// Specify what module code is generated.
     pub module: Option<String>,
     /// Specify what JSX code is generated.
-    pub jsx: Option<String>,
+    /// <https://www.typescriptlang.org/tsconfig/#jsx>
+    pub jsx: Option<TsConfigJsx>,
+    /// Specify the JSX factory function used when targeting React JSX emit, e.g. 'createElement' or 'h'.
+    /// <https://www.typescriptlang.org/tsconfig/#jsxFactory>
+    pub jsx_factory: Option<String>,
+    /// Specify the JSX fragment factory function to use when targeting react
+    /// JSX emit with jsxFactory compiler option is specified, e.g. Fragment.
+    /// <https://www.typescriptlang.org/tsconfig/#jsxFragmentFactory>
+    pub jsx_fragment_factory: Option<String>,
     /// Enable experimental support for legacy experimental decorators.
     pub experimental_decorators: Option<bool>,
     /// Emit design-type metadata for decorated declarations in source files.
@@ -52,6 +60,26 @@ pub struct TsConfigCompilerOptions {
     pub base_url: Option<String>,
     /// Specify a set of entries that re-map imports to additional lookup locations.
     pub paths: Option<HashMap<String, Vec<String>>>,
+}
+
+/// <https://www.typescriptlang.org/tsconfig/#jsx>
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+pub enum TsConfigJsx {
+    #[serde(rename = "react-jsx")]
+    ReactJsx,
+    #[serde(rename = "react-jsxdev")]
+    ReactJsxDev,
+    #[serde(rename = "preserve")]
+    Preserve,
+    #[serde(rename = "react-native")]
+    ReactNative,
+    #[serde(rename = "react")]
+    React,
+}
+impl TsConfigJsx {
+    pub fn is_dev(self) -> bool {
+        matches!(self, Self::ReactJsxDev)
+    }
 }
 
 impl TsConfig {
