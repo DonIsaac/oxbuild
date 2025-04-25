@@ -1,38 +1,115 @@
 use std::{
+    borrow::Cow,
     fs,
-    ops::Deref,
+    num::NonZeroUsize,
     path::{Path, PathBuf},
     sync::Arc,
 };
 
+use glob::glob;
 use ignore::{DirEntry, Error as WalkError, ParallelVisitor, ParallelVisitorBuilder, WalkState};
 use oxc::diagnostics::{Error, NamedSource, OxcDiagnostic};
 
 use crate::{
     compiler::{compile, CompileOptions, CompiledOutput},
-    DiagnosticSender, OxbuildOptions,
+    workspace::{Package, PackageError, Workspace},
+    DiagnosticSender,
 };
 
+pub struct MonorepoWalker {
+    root: Arc<Workspace>,
+    nthreads: NonZeroUsize,
+}
+impl From<Workspace> for MonorepoWalker {
+    fn from(root: Workspace) -> Self {
+        Self {
+            root: Arc::new(root),
+            nthreads: std::thread::available_parallelism()
+                .unwrap_or(unsafe { NonZeroUsize::new_unchecked(1) }),
+        }
+    }
+}
+impl MonorepoWalker {
+    pub fn with_nthreads(mut self, nthreads: usize) -> Self {
+        self.nthreads = NonZeroUsize::new(nthreads).unwrap();
+        self
+    }
+
+    pub fn walk(self, sender: DiagnosticSender) {
+        let nthreads: usize = self.nthreads.into();
+
+        if let Some(workspace_globs) = self.root.workspace_globs() {
+            if !workspace_globs.errors.is_empty() {
+                let errors: Vec<miette::Error> = workspace_globs
+                    .errors
+                    .into_iter()
+                    .map(|e| {
+                        let pos = oxc::span::Span::sized(e.pos as u32, 0);
+                        OxcDiagnostic::error(Cow::Owned(e.msg.into()))
+                            .with_label(pos)
+                            .into()
+                    })
+                    .collect::<Vec<_>>();
+
+                let root_path = self.root.root_dir.join("package.json");
+
+                sender.send(Some((root_path, errors))).unwrap();
+                return;
+            }
+            let patterns = workspace_globs.patterns;
+            assert!(!patterns.is_empty());
+
+            for pattern in patterns {
+                for package_root in glob(pattern.as_str()).unwrap() {
+                    let Ok(package_root) = package_root else {
+                        continue;
+                    };
+                    match Package::from_package_dir(package_root.clone(), self.root.clone()) {
+                        Ok(package) => {
+                            let mut walker = WalkerBuilder::new(package, sender.clone());
+                            walker.walk(nthreads);
+                        }
+                        Err(PackageError::NoPackageJson) => continue,
+                        Err(PackageError::InvalidPackageJson(e)) => {
+                            sender
+                                .send(Some((package_root.join("package.json"), vec![e])))
+                                .unwrap();
+                        }
+                        Err(PackageError::InvalidTsConfig(e)) => {
+                            sender
+                                .send(Some((package_root.join("tsconfig.json"), vec![e])))
+                                .unwrap();
+                        }
+                    }
+                }
+            }
+            return;
+        }
+
+        let pkg: Workspace = Arc::try_unwrap(self.root).unwrap();
+        let pkg = Package::from(pkg);
+        let mut walker = WalkerBuilder::new(pkg, sender);
+        walker.walk(nthreads);
+    }
+}
+
 pub struct WalkerBuilder {
-    options: Arc<OxbuildOptions>,
-    compile_options: Arc<CompileOptions>,
+    options: Arc<CompileOptions>,
     sender: DiagnosticSender,
 }
 
 impl WalkerBuilder {
-    pub fn new(options: OxbuildOptions, sender: DiagnosticSender) -> Self {
-        let compile_options = CompileOptions::new(options.root.deref().to_path_buf())
-            .with_d_ts(options.isolated_declarations.clone());
+    pub fn new(options: Package, sender: DiagnosticSender) -> Self {
+        let compile_options = CompileOptions::from(options);
         Self {
-            compile_options: Arc::new(compile_options),
-            options: Arc::new(options),
+            options: Arc::new(compile_options),
             sender,
         }
     }
 
     pub fn walk(&mut self, nthreads: usize) {
         debug!("Starting walker with {} threads", nthreads);
-        let inner = ignore::WalkBuilder::new(&self.options.src)
+        let inner = ignore::WalkBuilder::new(self.options.root_dir())
             // TODO: use ignore to respect tsconfig include/exclude
             .ignore(false)
             .threads(nthreads)
@@ -47,15 +124,14 @@ impl<'s> ParallelVisitorBuilder<'s> for WalkerBuilder {
     fn build(&mut self) -> Box<dyn ParallelVisitor + 's> {
         Box::new(Walker {
             options: Arc::clone(&self.options),
-            compile_options: Arc::clone(&self.compile_options),
             sender: self.sender.clone(),
         })
     }
 }
 
 pub struct Walker {
-    options: Arc<OxbuildOptions>,
-    compile_options: Arc<CompileOptions>,
+    options: Arc<CompileOptions>,
+    // compile_options: Arc<CompileOptions>,
     sender: DiagnosticSender,
 }
 
@@ -65,7 +141,7 @@ impl Walker {
     fn is_allowed_ext<P: AsRef<Path>>(path: P) -> bool {
         path.as_ref()
             .extension()
-            .map_or(false, |ext| Self::ALLOWED_EXTS.iter().any(|&e| e == ext))
+            .is_some_and(|ext| Self::ALLOWED_EXTS.iter().any(|&e| e == ext))
     }
 
     #[must_use]
@@ -86,7 +162,7 @@ impl Walker {
             }
         };
 
-        match compile(&self.compile_options, path, &source_text) {
+        match compile(&self.options, path, &source_text) {
             Ok(output) => Some(output),
             Err(diagnostics) => {
                 let source = Arc::new(NamedSource::new(path.to_string_lossy(), source_text));
@@ -103,8 +179,8 @@ impl Walker {
     }
 
     fn get_output_path_for(&self, dir: &Path) -> PathBuf {
-        let rel = dir.strip_prefix(&self.options.src).unwrap();
-        self.options.dist.join(rel)
+        let rel = dir.strip_prefix(self.options.src()).unwrap();
+        self.options.dist().join(rel)
     }
 }
 

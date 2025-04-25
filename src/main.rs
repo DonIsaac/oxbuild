@@ -3,6 +3,7 @@ mod compiler;
 mod options;
 mod reporter;
 mod walk;
+mod workspace;
 
 use std::{process::ExitCode, thread, time::Instant};
 
@@ -28,9 +29,12 @@ fn main() -> Result<ExitCode> {
 
     let start = Instant::now();
 
+    let workspace = workspace::Workspace::load()?;
     let handle = thread::spawn(move || {
-        let mut walker = walk::WalkerBuilder::new(opts, report_sender.clone());
-        walker.walk(num_threads);
+        let walker = walk::MonorepoWalker::from(workspace);
+        walker
+            .with_nthreads(num_threads)
+            .walk(report_sender.clone());
         report_sender.send(None).unwrap();
     });
 

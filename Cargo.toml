@@ -9,7 +9,7 @@ homepage     = "https://github.com/DonIsaac/oxbuild"
 keywords     = ["typescript", "javascript", "compiler", "oxc", "oxbuild"]
 categories   = ["development-tools", "web-programming", "compilers"]
 edition      = "2021"
-rust-version = "1.76.0"                                                   # Support last 6 minor versions
+rust-version = "1.86.0"                                                   # Support last 6 minor versions
 
 [[bin]]
 name = "oxbuild"
@@ -18,16 +18,18 @@ path = "src/main.rs"
 [dependencies]
 anyhow              = { version = "1.0.90" }
 clap                = { version = "4.5.20", features = ["cargo"] }
+glob = "0.3.2"
 ignore              = { version = "0.4.23" }
 json-strip-comments = { version = "1.0.4" }
 log                 = { version = "0.4.22" }
-miette              = { version = "7.2.0", features = ["fancy"] }
+miette              = { version = "7.5.0", features = ["fancy"] }
 oxc                 = { version = "0.31.0", features = ["full"] }
 package-json        = { version = "0.4.0" }
 pretty_env_logger   = { version = "0.5.0" }
 serde               = { version = "1.0.210" }
 serde_json          = { version = "1.0.129" }
 static_assertions   = { version = "1.1.0" }
+yaml-rust           = { version = "0.4.5" }
 
 [lints.clippy]
 all        = { level = "warn", priority = -1 }
