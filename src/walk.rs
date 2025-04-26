@@ -77,7 +77,7 @@ impl MonorepoWalker {
                     match Package::from_package_dir(tsconfigs, abs_package_root, self.root.clone())
                     {
                         Ok(package) => {
-                            println!("starting walker for package: {package:#?}");
+                            debug!("starting walker for package: {package:#?}");
                             let mut walker = WalkerBuilder::new(package, sender.clone());
                             walker.walk(nthreads);
                         }
@@ -100,7 +100,7 @@ impl MonorepoWalker {
 
         let pkg: Workspace = Arc::try_unwrap(self.root).unwrap();
         let pkg = Package::from(pkg);
-        println!("starting walker for package: {pkg:#?}");
+        debug!("starting walker for package: {pkg:#?}");
         let mut walker = WalkerBuilder::new(pkg, sender);
         walker.walk(nthreads);
     }

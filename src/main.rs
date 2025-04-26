@@ -1,6 +1,5 @@
 mod cli;
 mod compiler;
-mod options;
 mod reporter;
 mod walk;
 mod workspace;

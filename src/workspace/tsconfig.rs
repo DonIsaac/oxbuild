@@ -69,11 +69,6 @@ pub struct TsConfig {
     pub compiler_options: Option<TsConfigCompilerOptions>,
     pub exclude: Option<Vec<String>>,
 }
-impl TsConfig {
-    pub fn compiler_options(&self) -> Option<&TsConfigCompilerOptions> {
-        self.compiler_options.as_ref()
-    }
-}
 
 #[derive(Debug, Default, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
