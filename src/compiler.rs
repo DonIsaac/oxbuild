@@ -144,13 +144,13 @@ impl From<Package> for CompilerOptions {
             }
 
             if let Some(root_dir) = co.root_dir {
-                src = Some(package.root_dir.join(root_dir));
+                src = Some(package.root_dir.join(root_dir).canonicalize().unwrap());
             }
             if let Some(out_dir) = co.out_dir {
                 dist = Some(package.root_dir.join(out_dir));
             }
         }
-        debug_assert!(package.root_dir.is_absolute());
+        debug_assert!(package.root_dir.is_absolute(), "package.root_dir must be absolute: {}", package.root_dir.display());
         let src = src.unwrap_or_else(|| package.root_dir.join("src"));
         let dist = dist.unwrap_or_else(|| package.root_dir.join("dist"));
         transform.cwd = package.root_dir;

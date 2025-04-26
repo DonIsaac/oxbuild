@@ -25,6 +25,7 @@ impl Package {
         workspace: Arc<Workspace>,
     ) -> std::result::Result<Self, PackageError> {
         debug_assert!(dir.is_dir());
+        assert!(dir.is_absolute(), "package.root_dir must be absolute: {}", dir.display());
 
         let mut manager = PackageJsonManager::new();
         let package_json_path = dir.join("package.json");

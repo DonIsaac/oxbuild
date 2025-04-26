@@ -30,8 +30,8 @@ impl From<Workspace> for MonorepoWalker {
     }
 }
 impl MonorepoWalker {
-    pub fn with_nthreads(mut self, nthreads: usize) -> Self {
-        self.nthreads = NonZeroUsize::new(nthreads).unwrap();
+    pub fn with_nthreads(mut self, nthreads: NonZeroUsize) -> Self {
+        self.nthreads = nthreads;
         self
     }
 
@@ -64,7 +64,17 @@ impl MonorepoWalker {
                     let Ok(package_root) = package_root else {
                         continue;
                     };
-                    match Package::from_package_dir(package_root.clone(), self.root.clone()) {
+                    if !package_root.is_dir() {
+                        continue;
+                    }
+                    // note: we want diagnostics to use relative dirs cus they're prettier
+                    let abs_package_root = self
+                        .root
+                        .root_dir
+                        .join(package_root.clone())
+                        .canonicalize()
+                        .unwrap();
+                    match Package::from_package_dir(abs_package_root, self.root.clone()) {
                         Ok(package) => {
                             let mut walker = WalkerBuilder::new(package, sender.clone());
                             walker.walk(nthreads);
@@ -106,7 +116,7 @@ impl WalkerBuilder {
 
     pub fn walk(&mut self, nthreads: usize) {
         debug!("Starting walker with {} threads", nthreads);
-        let inner = ignore::WalkBuilder::new(self.options.root_dir())
+        let inner = ignore::WalkBuilder::new(self.options.src())
             // TODO: use ignore to respect tsconfig include/exclude
             .ignore(false)
             .threads(nthreads)
@@ -175,7 +185,17 @@ impl Walker {
     }
 
     fn get_output_path_for(&self, dir: &Path) -> PathBuf {
-        let rel = dir.strip_prefix(self.compiler.options.src()).unwrap();
+        let src = self.compiler.options.src();
+        let rel = dir
+            .strip_prefix(src)
+            .map_err(|_| {
+                Error::msg(format!(
+                    "Failed to strip prefix '{}' from path '{}'",
+                    src.display(),
+                    dir.display()
+                ))
+            })
+            .unwrap();
         self.compiler.options.dist().join(rel)
     }
 }

@@ -26,7 +26,7 @@ log                 = { version = "0.4.22" }
 oxc                 = { version = "0.66.0", features = ["full"] }
 oxc-miette          = { version = "2.2.1", features = ["fancy", "owo-colors", "terminal_size"] }
 oxc_sourcemap       = { version = "3.0.0", features = ["rayon"] }
-package-json        = { version = "0.4.0" }
+package-json        = { version = "0.5.0" }
 pretty_env_logger   = { version = "0.5.0" }
 serde               = { version = "1.0.210" }
 serde_json          = { version = "1.0.129" }

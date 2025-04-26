@@ -22,8 +22,8 @@ use crate::{
 fn main() -> Result<ExitCode> {
     pretty_env_logger::init();
     let matches = cli();
-    let opts = CliOptions::new(matches).and_then(OxbuildOptions::new)?;
-    let num_threads = opts.num_threads.get();
+    let opts = CliOptions::new(matches).unwrap();//.and_then(OxbuildOptions::new)?;
+    let num_threads = opts.num_threads;
 
     let (mut reporter, report_sender) = Reporter::new();
 
