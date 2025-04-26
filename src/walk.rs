@@ -12,7 +12,7 @@ use oxc::diagnostics::{Error, NamedSource, OxcDiagnostic};
 
 use crate::{
     compiler::{CompiledOutput, CompilerOptions, OxBuild},
-    workspace::{Package, PackageError, Workspace},
+    workspace::{Package, PackageError, TsConfigStore, Workspace},
     DiagnosticSender,
 };
 
@@ -35,7 +35,7 @@ impl MonorepoWalker {
         self
     }
 
-    pub fn walk(self, sender: DiagnosticSender) {
+    pub fn walk(self, tsconfigs: &mut TsConfigStore, sender: DiagnosticSender) {
         let nthreads: usize = self.nthreads.into();
 
         if let Some(workspace_globs) = self.root.workspace_globs() {
@@ -74,8 +74,10 @@ impl MonorepoWalker {
                         .join(package_root.clone())
                         .canonicalize()
                         .unwrap();
-                    match Package::from_package_dir(abs_package_root, self.root.clone()) {
+                    match Package::from_package_dir(tsconfigs, abs_package_root, self.root.clone())
+                    {
                         Ok(package) => {
+                            println!("starting walker for package: {package:#?}");
                             let mut walker = WalkerBuilder::new(package, sender.clone());
                             walker.walk(nthreads);
                         }
@@ -98,6 +100,7 @@ impl MonorepoWalker {
 
         let pkg: Workspace = Arc::try_unwrap(self.root).unwrap();
         let pkg = Package::from(pkg);
+        println!("starting walker for package: {pkg:#?}");
         let mut walker = WalkerBuilder::new(pkg, sender);
         walker.walk(nthreads);
     }
@@ -106,23 +109,34 @@ impl MonorepoWalker {
 pub struct WalkerBuilder {
     options: Arc<CompilerOptions>,
     sender: DiagnosticSender,
+    excludes: Vec<String>,
 }
 
 impl WalkerBuilder {
     pub fn new(package: Package, sender: DiagnosticSender) -> Self {
+        let excludes = package
+            .tsconfig()
+            .and_then(|t| t.exclude.clone())
+            .unwrap_or_default();
         let options = Arc::new(CompilerOptions::from(package));
-        Self { options, sender }
+        Self {
+            options,
+            sender,
+            excludes,
+        }
     }
 
     pub fn walk(&mut self, nthreads: usize) {
         debug!("Starting walker with {} threads", nthreads);
-        let inner = ignore::WalkBuilder::new(self.options.src())
-            // TODO: use ignore to respect tsconfig include/exclude
-            .ignore(false)
-            .threads(nthreads)
-            .hidden(false)
-            .build_parallel();
+        let mut builder = ignore::WalkBuilder::new(self.options.src());
+        // TODO: use ignore to respect tsconfig include/exclude
+        builder.ignore(false).threads(nthreads).hidden(false);
 
+        for exclude in self.excludes.iter() {
+            builder.add_ignore(exclude);
+        }
+
+        let inner = builder.build_parallel();
         inner.visit(self);
     }
 }

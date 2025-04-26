@@ -11,10 +11,10 @@ extern crate pretty_env_logger;
 #[macro_use]
 extern crate log;
 use miette::Result;
+use workspace::TsConfigStore;
 
 use crate::{
     cli::{cli, CliOptions},
-    options::OxbuildOptions,
     reporter::{DiagnosticSender, Reporter},
 };
 
@@ -22,19 +22,20 @@ use crate::{
 fn main() -> Result<ExitCode> {
     pretty_env_logger::init();
     let matches = cli();
-    let opts = CliOptions::new(matches).unwrap();//.and_then(OxbuildOptions::new)?;
+    let opts = CliOptions::new(matches).unwrap(); //.and_then(OxbuildOptions::new)?;
     let num_threads = opts.num_threads;
 
     let (mut reporter, report_sender) = Reporter::new();
 
     let start = Instant::now();
 
-    let workspace = workspace::Workspace::load()?;
+    let mut tsconfig_store = TsConfigStore::default();
+    let workspace = workspace::Workspace::load(&mut tsconfig_store)?;
     let handle = thread::spawn(move || {
         let walker = walk::MonorepoWalker::from(workspace);
         walker
             .with_nthreads(num_threads)
-            .walk(report_sender.clone());
+            .walk(&mut tsconfig_store, report_sender.clone());
         report_sender.send(None).unwrap();
     });
 

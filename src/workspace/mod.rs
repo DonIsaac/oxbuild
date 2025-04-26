@@ -11,6 +11,7 @@ use package::PackageInterface;
 use package_json::PackageJson;
 use package_json::PackageJsonManager;
 use std::path::PathBuf;
+use std::sync::Arc;
 use yaml_rust::{yaml::Hash as YamlHash, Yaml, YamlLoader};
 
 use error::AnyhowWrap;
@@ -21,7 +22,7 @@ pub use tsconfig::*;
 pub struct Workspace {
     pub package_json: PackageJsonManager,
     pub root_dir: PathBuf,
-    pub tsconfig: Option<TsConfig>,
+    pub tsconfig: Option<Arc<TsConfig>>,
     pub pnpm_workspace: Option<YamlHash>,
 }
 impl From<Workspace> for Package {
@@ -39,7 +40,7 @@ impl PackageInterface for Workspace {
         self.package_json.as_ref()
     }
     fn tsconfig(&self) -> Option<&TsConfig> {
-        self.tsconfig.as_ref()
+        self.tsconfig.as_ref().map(Arc::as_ref)
     }
     fn root_dir(&self) -> &PathBuf {
         &self.root_dir
@@ -49,7 +50,7 @@ impl PackageInterface for Workspace {
     }
 }
 impl Workspace {
-    pub fn load() -> Result<Self> {
+    pub fn load(tsconfigs: &mut TsConfigStore) -> Result<Self> {
         let mut manager = PackageJsonManager::new();
         let package_json = manager.locate_closest().map_err(AnyhowWrap::from)?;
         assert!(package_json.ends_with("package.json"));
@@ -75,8 +76,7 @@ impl Workspace {
             let name = name.to_str().unwrap(); // wont panic, we know its ascii
             match name {
                 "tsconfig.json" => {
-                    let tsconfig = std::fs::read_to_string(entry.path()).into_diagnostic()?;
-                    ws.tsconfig = Some(TsConfig::parse(tsconfig)?);
+                    ws.tsconfig = Some(tsconfigs.load(root_dir.join(entry.path()))?);
                     found_tsconfig = true;
                     if found_pnpm_workspace {
                         break;

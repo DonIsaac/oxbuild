@@ -109,9 +109,13 @@ impl From<Package> for CompilerOptions {
         let mut src: Option<PathBuf> = None;
         let mut dist: Option<PathBuf> = None;
 
-        if let Some(co) = package.tsconfig.and_then(|t| t.compiler_options) {
-            if let Some(target) = co.target {
-                transform = TransformOptions::from_target(&target).unwrap()
+        if let Some(co) = package
+            .tsconfig
+            .as_ref()
+            .and_then(|t| t.compiler_options.as_ref())
+        {
+            if let Some(target) = &co.target {
+                transform = TransformOptions::from_target(target).unwrap()
             }
             if let Some(factory) = co.jsx_factory.as_ref() {
                 transform.typescript.jsx_pragma = factory.clone().into();
@@ -126,8 +130,8 @@ impl From<Package> for CompilerOptions {
 
             transform.jsx = JsxOptions {
                 jsx_plugin: co.jsx.is_some_and(|jsx| jsx != TsConfigJsx::Preserve),
-                pragma_frag: co.jsx_fragment_factory,
-                pragma: co.jsx_factory,
+                pragma_frag: co.jsx_fragment_factory.clone(),
+                pragma: co.jsx_factory.clone(),
                 development: co.jsx.is_some_and(|jsx| jsx.is_dev()),
                 runtime: co.jsx.map_or(JsxRuntime::default(), |jsx| match jsx {
                     TsConfigJsx::React => JsxRuntime::Classic,
@@ -143,14 +147,18 @@ impl From<Package> for CompilerOptions {
                 });
             }
 
-            if let Some(root_dir) = co.root_dir {
+            if let Some(root_dir) = co.root_dir.as_ref() {
                 src = Some(package.root_dir.join(root_dir).canonicalize().unwrap());
             }
-            if let Some(out_dir) = co.out_dir {
+            if let Some(out_dir) = co.out_dir.as_ref() {
                 dist = Some(package.root_dir.join(out_dir));
             }
         }
-        debug_assert!(package.root_dir.is_absolute(), "package.root_dir must be absolute: {}", package.root_dir.display());
+        debug_assert!(
+            package.root_dir.is_absolute(),
+            "package.root_dir must be absolute: {}",
+            package.root_dir.display()
+        );
         let src = src.unwrap_or_else(|| package.root_dir.join("src"));
         let dist = dist.unwrap_or_else(|| package.root_dir.join("dist"));
         transform.cwd = package.root_dir;

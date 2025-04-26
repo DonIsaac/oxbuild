@@ -3,13 +3,13 @@ use std::{path::PathBuf, sync::Arc};
 use miette::Error;
 use package_json::{PackageJson, PackageJsonManager};
 
-use super::{tsconfig::TsConfig, AnyhowWrap, Workspace};
+use super::{tsconfig::TsConfig, AnyhowWrap, TsConfigStore, Workspace};
 
 #[derive(Debug)]
 pub struct Package {
     pub(crate) package_json: PackageJsonManager,
     pub(crate) root_dir: PathBuf,
-    pub(crate) tsconfig: Option<TsConfig>,
+    pub(crate) tsconfig: Option<Arc<TsConfig>>,
     pub(crate) parent: Option<Arc<Workspace>>,
 }
 
@@ -20,12 +20,20 @@ pub enum PackageError {
     InvalidTsConfig(Error),
 }
 impl Package {
+    pub fn tsconfig(&self) -> Option<&TsConfig> {
+        self.tsconfig.as_ref().map(Arc::as_ref)
+    }
     pub fn from_package_dir(
+        tsconfigs: &mut TsConfigStore,
         dir: PathBuf,
         workspace: Arc<Workspace>,
     ) -> std::result::Result<Self, PackageError> {
         debug_assert!(dir.is_dir());
-        assert!(dir.is_absolute(), "package.root_dir must be absolute: {}", dir.display());
+        assert!(
+            dir.is_absolute(),
+            "package.root_dir must be absolute: {}",
+            dir.display()
+        );
 
         let mut manager = PackageJsonManager::new();
         let package_json_path = dir.join("package.json");
@@ -40,7 +48,11 @@ impl Package {
         let tsconfig_path = dir.join("tsconfig.json");
         let tsconfig = tsconfig_path
             .is_file()
-            .then(|| TsConfig::from_file(tsconfig_path).map_err(PackageError::InvalidTsConfig))
+            .then(|| {
+                tsconfigs
+                    .load(tsconfig_path)
+                    .map_err(PackageError::InvalidTsConfig)
+            })
             .transpose()?;
 
         Ok(Self {
@@ -65,7 +77,7 @@ impl PackageInterface for Package {
             .map(|p| p.as_ref() as &dyn PackageInterface)
     }
     fn tsconfig(&self) -> Option<&TsConfig> {
-        self.tsconfig.as_ref()
+        self.tsconfig.as_ref().map(Arc::as_ref)
     }
 }
 
