@@ -27,6 +27,8 @@ pub struct TsConfigStore {
 }
 impl TsConfigStore {
     pub fn load(&mut self, tsconfig_path: PathBuf) -> Result<Arc<TsConfig>> {
+        assert!(tsconfig_path.is_absolute());
+        debug!("loading tsconfig at '{}'", tsconfig_path.display());
         {
             if let Some(existing) = self.configs.get(&tsconfig_path) {
                 return existing.as_ref().map(Arc::clone).ok_or_else(|| {
@@ -141,7 +143,11 @@ impl TsConfig {
     pub fn parse(mut source_text: String) -> Result<Self> {
         json_strip_comments::strip(&mut source_text).unwrap();
 
-        serde_json::from_str(&source_text).into_diagnostic()
+        let mut tsconfig: Self = serde_json::from_str(&source_text).into_diagnostic()?;
+        if tsconfig.exclude.as_ref().is_some_and(|ex| ex.is_empty()) {
+            tsconfig.exclude = None;
+        }
+        Ok(tsconfig)
     }
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
         let source_text = std::fs::read_to_string(path).into_diagnostic()?;

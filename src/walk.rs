@@ -100,7 +100,7 @@ impl MonorepoWalker {
 
         let pkg: Workspace = Arc::try_unwrap(self.root).unwrap();
         let pkg = Package::from(pkg);
-        debug!("starting walker for package: {pkg:#?}");
+        debug!("starting walker for package at {}", pkg.root_dir.display());
         let mut walker = WalkerBuilder::new(pkg, sender);
         walker.walk(nthreads);
     }
@@ -128,15 +128,20 @@ impl WalkerBuilder {
 
     pub fn walk(&mut self, nthreads: usize) {
         debug!("Starting walker with {} threads", nthreads);
-        let mut builder = ignore::WalkBuilder::new(self.options.src());
-        // TODO: use ignore to respect tsconfig include/exclude
-        builder.ignore(false).threads(nthreads).hidden(false);
-
+        let mut extra = ignore::overrides::OverrideBuilder::new(self.options.root_dir());
         for exclude in self.excludes.iter() {
-            builder.add_ignore(exclude);
+            let exclude = format!("!{exclude}");
+            extra.add(&exclude).unwrap();
         }
 
-        let inner = builder.build_parallel();
+        // TODO: use ignore to respect tsconfig include/exclude
+        let inner = ignore::WalkBuilder::new(self.options.src())
+            .ignore(false)
+            .threads(nthreads)
+            .hidden(false)
+            .overrides(extra.build().unwrap())
+            .build_parallel();
+
         inner.visit(self);
     }
 }

@@ -22,6 +22,7 @@ fn main() -> Result<ExitCode> {
     pretty_env_logger::init();
     let matches = cli();
     let opts = CliOptions::new(matches).unwrap(); //.and_then(OxbuildOptions::new)?;
+    debug!("cli options: {:#?}", opts);
     let num_threads = opts.num_threads;
 
     let (mut reporter, report_sender) = Reporter::new();
@@ -29,7 +30,7 @@ fn main() -> Result<ExitCode> {
     let start = Instant::now();
 
     let mut tsconfig_store = TsConfigStore::default();
-    let workspace = workspace::Workspace::load(&mut tsconfig_store)?;
+    let workspace = workspace::Workspace::load(&mut tsconfig_store, &opts)?;
     let handle = thread::spawn(move || {
         let walker = walk::MonorepoWalker::from(workspace);
         walker

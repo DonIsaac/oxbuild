@@ -54,6 +54,7 @@ fn path_parser(v: &str) -> Result<PathBuf> {
 }
 
 #[non_exhaustive]
+#[derive(Debug)]
 pub struct CliOptions {
     pub root: Root,
     pub config: Option<PathBuf>,

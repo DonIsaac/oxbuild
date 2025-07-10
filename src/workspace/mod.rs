@@ -18,6 +18,8 @@ use error::AnyhowWrap;
 pub use package::{Package, PackageError};
 pub use tsconfig::*;
 
+use crate::cli::CliOptions;
+
 #[derive(Debug)]
 pub struct Workspace {
     pub package_json: PackageJsonManager,
@@ -50,16 +52,20 @@ impl PackageInterface for Workspace {
     }
 }
 impl Workspace {
-    pub fn load(tsconfigs: &mut TsConfigStore) -> Result<Self> {
+    pub fn load(tsconfigs: &mut TsConfigStore, options: &CliOptions) -> Result<Self> {
         let mut manager = PackageJsonManager::new();
         let package_json = manager.locate_closest().map_err(AnyhowWrap::from)?;
         assert!(package_json.ends_with("package.json"));
         let _pkg = manager.read_ref().map_err(AnyhowWrap::from)?;
         let root_dir = package_json.parent().unwrap();
+        let tsconfig = match &options.tsconfig {
+            Some(tsconfig_path) => Some(tsconfigs.load(tsconfig_path.clone())?),
+            None => None,
+        };
         let mut ws = Self {
             package_json: manager,
             root_dir: root_dir.to_path_buf(),
-            tsconfig: None,
+            tsconfig,
             pnpm_workspace: None,
         };
         let entries = root_dir.read_dir().into_diagnostic()?;
@@ -75,7 +81,7 @@ impl Workspace {
             }
             let name = name.to_str().unwrap(); // wont panic, we know its ascii
             match name {
-                "tsconfig.json" => {
+                "tsconfig.json" if ws.tsconfig.is_none() => {
                     ws.tsconfig = Some(tsconfigs.load(root_dir.join(entry.path()))?);
                     found_tsconfig = true;
                     if found_pnpm_workspace {
