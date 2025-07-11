@@ -16,17 +16,17 @@ name = "oxbuild"
 path = "src/main.rs"
 
 [dependencies]
-anyhow              = { version = "1.0.90" }
+anyhow              = { version = "1.0.98" }
 clap                = { version = "4.5.20", features = ["cargo"] }
 ignore              = { version = "0.4.23" }
 json-strip-comments = { version = "1.0.4" }
 log                 = { version = "0.4.22" }
 miette              = { version = "7.2.0", features = ["fancy"] }
 oxc                 = { version = "0.31.0", features = ["full"] }
-package-json        = { version = "0.4.0" }
+package-json        = { version = "0.5.0" }
 pretty_env_logger   = { version = "0.5.0" }
-serde               = { version = "1.0.210" }
-serde_json          = { version = "1.0.129" }
+serde               = { version = "1.0.219" }
+serde_json          = { version = "1.0.140" }
 static_assertions   = { version = "1.1.0" }
 
 [lints.clippy]
