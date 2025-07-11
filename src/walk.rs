@@ -65,7 +65,7 @@ impl Walker {
     fn is_allowed_ext<P: AsRef<Path>>(path: P) -> bool {
         path.as_ref()
             .extension()
-            .map_or(false, |ext| Self::ALLOWED_EXTS.iter().any(|&e| e == ext))
+            .is_some_and(|ext| Self::ALLOWED_EXTS.iter().any(|&e| e == ext))
     }
 
     #[must_use]

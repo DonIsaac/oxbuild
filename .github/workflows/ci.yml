@@ -57,7 +57,7 @@ jobs:
 
       - run: cargo check --all-targets --locked
       - run: cargo test --no-run
-      - run: cargo nextest run
+      - run: cargo nextest run --no-tests warn
 
   typos:
     name: Spell Check
