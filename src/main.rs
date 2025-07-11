@@ -3,6 +3,7 @@ mod compiler;
 mod options;
 mod reporter;
 mod walk;
+mod workspace;
 
 use std::{process::ExitCode, thread, time::Instant};
 
@@ -15,13 +16,14 @@ use crate::{
     cli::{cli, CliOptions},
     options::OxbuildOptions,
     reporter::{DiagnosticSender, Reporter},
+    workspace::{Manifest, Root},
 };
 
 #[allow(clippy::print_stdout)]
 fn main() -> Result<ExitCode> {
     pretty_env_logger::init();
-    let matches = cli();
-    let opts = CliOptions::new(matches).and_then(OxbuildOptions::new)?;
+    let cli_args = CliOptions::new(cli())?;
+    let opts = OxbuildOptions::new(cli_args)?;
     let num_threads = opts.num_threads.get();
 
     let (mut reporter, report_sender) = Reporter::new();

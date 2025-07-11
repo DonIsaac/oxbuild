@@ -1,12 +1,11 @@
 mod error;
-mod root;
 
 use std::{env, num::NonZeroUsize, path::PathBuf};
 
 use clap::{self, command, Arg, ArgMatches, ValueHint};
 use miette::{Context, IntoDiagnostic, Result};
 
-pub(crate) use root::Root;
+use crate::Root;
 
 pub fn cli() -> ArgMatches {
     command!()
