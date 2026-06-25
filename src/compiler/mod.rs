@@ -1,39 +1,32 @@
-#![allow(dead_code, unused_imports, unused_variables)]
 mod options;
+mod oxc_options;
+
+use std::{mem, ops::ControlFlow, path::Path};
 
 use oxc::{
-    ast::{ast::Program, Trivias},
-    codegen::CodegenReturn,
+    codegen::{CodegenOptions, CodegenReturn},
+    diagnostics::{Diagnostics, OxcDiagnostic},
     isolated_declarations::IsolatedDeclarationsOptions,
-    transformer::{ES2015Options, JsxOptions},
-};
-use std::{fs, path::Path};
-
-use oxc::{
-    allocator::Allocator,
-    codegen::{Codegen, CommentOptions},
-    diagnostics::OxcDiagnostic,
-    isolated_declarations::{IsolatedDeclarations, IsolatedDeclarationsReturn},
-    minifier::Minifier,
-    parser::{Parser, ParserReturn},
-    semantic::{Semantic, SemanticBuilder, SemanticBuilderReturn},
-    sourcemap::SourceMap,
+    parser::ParserReturn,
     span::SourceType,
-    transformer::{TransformOptions, Transformer, TransformerReturn},
+    transformer::TransformOptions,
+    CompilerInterface,
 };
 
 pub use options::CompileOptions;
 
-use crate::options::DeclarationsOptions;
+use self::oxc_options::{
+    to_codegen_options, to_isolated_declarations_options, to_transform_options,
+};
 
 static_assertions::assert_impl_all!(CompileOptions: Send, Sync);
 
 #[derive(Debug, Clone)]
 pub struct CompiledOutput {
     pub source_text: String,
-    pub source_map: Option<SourceMap>,
+    pub source_map_json: Option<String>,
     pub declarations: Option<String>,
-    pub declarations_map: Option<SourceMap>,
+    pub declarations_map_json: Option<String>,
 }
 
 pub fn compile(
@@ -41,155 +34,101 @@ pub fn compile(
     source_path: &Path,
     source_text: &str,
 ) -> Result<CompiledOutput, Vec<OxcDiagnostic>> {
-    // is this js? ts? tsx?
     let source_type = SourceType::from_path(source_path).unwrap();
-    // get the name as a pretty string
-    let source_name = source_path.as_os_str().to_str().unwrap();
-    // needed by oxc to allocate memory.
-    let allocator = Allocator::default();
+    let mut compiler = Compiler::new(options);
+    compiler.compile(source_text, source_type, source_path);
+    compiler.finish()
+}
 
-    /* ========================== PARSE ========================== */
-    let ParserReturn {
-        mut program,
-        trivias,
-        mut errors,
-        panicked,
-    } = Parser::new(&allocator, source_text, source_type).parse();
+#[derive(Default)]
+struct CompiledOutputBuilder {
+    source_text: Option<String>,
+    source_map_json: Option<String>,
+    declarations: Option<String>,
+    declarations_map_json: Option<String>,
+}
 
-    if panicked {
-        debug_assert!(!errors.is_empty());
-        return Err(errors);
-    }
-
-    let SemanticBuilderReturn {
-        semantic,
-        errors: semantic_errors,
-    } = SemanticBuilder::new(source_text)
-        .with_trivias(trivias.clone())
-        .with_check_syntax_error(true)
-        .build(&program);
-    errors.extend(semantic_errors);
-    if !errors.is_empty() {
-        return Err(errors);
-    }
-
-    /* ========================== TRANSFORM ========================== */
-
-    // produce .d.ts files
-    let id = options
-        .declarations_options()
-        .map(|opts| {
-            isolated_declarations(
-                opts,
-                &allocator,
-                &program,
-                source_text,
-                source_name,
-                trivias.clone(),
-            )
-        })
-        .transpose();
-
-    let (id, id_map) = match id {
-        Ok(Some(CodegenReturn { code, map })) => (Some(code), Some(map)),
-        Ok(None) => (None, None),
-        Err(id_errors) => {
-            errors.extend(id_errors);
-            (None, None)
+impl CompiledOutputBuilder {
+    fn finish(self) -> CompiledOutput {
+        CompiledOutput {
+            source_text: self.source_text.unwrap_or_default(),
+            source_map_json: self.source_map_json,
+            declarations: self.declarations,
+            declarations_map_json: self.declarations_map_json,
         }
-    };
-
-    let CodegenReturn {
-        code: output_text,
-        map: source_map,
-    } = transform(&allocator, semantic, &mut program, source_path);
-
-    Ok(CompiledOutput {
-        source_text: output_text,
-        source_map,
-        declarations: id,
-        declarations_map: id_map.flatten(),
-    })
+    }
 }
 
-fn isolated_declarations<'a>(
-    options: &DeclarationsOptions,
-    allocator: &'a Allocator,
-    program: &Program<'a>,
-    source_text: &'a str,
-    source_name: &'a str,
-    trivias: Trivias,
-) -> Result<CodegenReturn, Vec<OxcDiagnostic>> {
-    let IsolatedDeclarationsReturn {
-        program, errors, ..
-    } = IsolatedDeclarations::new(
-        allocator,
-        source_text,
-        &trivias,
-        IsolatedDeclarationsOptions {
-            strip_internal: options.strip_internal,
-        },
-    )
-    .build(program);
+struct Compiler<'a> {
+    options: &'a CompileOptions,
+    transform_options: TransformOptions,
+    codegen_options: CodegenOptions,
+    output: CompiledOutputBuilder,
+    diagnostics: Vec<OxcDiagnostic>,
+}
 
-    if !errors.is_empty() {
-        return Err(errors);
+impl<'a> Compiler<'a> {
+    fn new(options: &'a CompileOptions) -> Self {
+        Self {
+            options,
+            transform_options: to_transform_options(options),
+            codegen_options: to_codegen_options(),
+            output: CompiledOutputBuilder::default(),
+            diagnostics: Vec::new(),
+        }
     }
 
-    let result = Codegen::new()
-        .with_source_text(source_text)
-        .with_capacity(source_text.len())
-        .enable_comment(
-            source_text,
-            trivias,
-            CommentOptions {
-                preserve_annotate_comments: false,
-            },
-        )
-        // .enable_source_map(source_name, source_text)
-        .build(&program);
-
-    Ok(result)
+    fn finish(self) -> Result<CompiledOutput, Vec<OxcDiagnostic>> {
+        if self.diagnostics.is_empty() {
+            Ok(self.output.finish())
+        } else {
+            Err(self.diagnostics)
+        }
+    }
 }
 
-fn transform<'a>(
-    allocator: &'a Allocator,
-    semantic: Semantic<'a>,
-    program: &mut Program<'a>,
-    source_path: &Path,
-) -> CodegenReturn {
-    let trivias = semantic.trivias().clone();
-    let source_text = semantic.source_text();
+impl CompilerInterface for Compiler<'_> {
+    fn handle_errors(&mut self, diagnostics: Diagnostics) {
+        self.diagnostics.extend(diagnostics);
+    }
 
-    let options = TransformOptions {
-        react: JsxOptions {
-            jsx_plugin: true,
-            display_name_plugin: true,
-            jsx_source_plugin: true,
-            development: true,
-            ..Default::default()
-        },
-        ..Default::default()
-    };
-    let transformer = Transformer::new(
-        allocator,
-        source_path,
-        source_text,
-        trivias.clone(),
-        options,
-    );
-    let (symbols, scopes) = semantic.into_symbol_table_and_scope_tree();
+    fn transform_options(&self) -> Option<&TransformOptions> {
+        Some(&self.transform_options)
+    }
 
-    let TransformerReturn {
-        errors,
-        symbols,
-        scopes,
-    } = transformer.build_with_symbols_and_scopes(symbols, scopes, program);
+    fn isolated_declaration_options(&self) -> Option<IsolatedDeclarationsOptions> {
+        self.options
+            .declarations_options()
+            .map(to_isolated_declarations_options)
+    }
 
-    let codegen = Codegen::new()
-        .enable_comment(source_text, trivias.clone(), Default::default())
-        .enable_source_map(source_path.as_os_str().to_str().unwrap(), source_text);
-    //.with_mangler(Some(Default::default()));
+    fn codegen_options(&self) -> Option<CodegenOptions> {
+        Some(self.codegen_options.clone())
+    }
 
-    codegen.build(program)
+    fn enable_sourcemap(&self) -> bool {
+        true
+    }
+
+    fn after_parse(&mut self, parser_return: &mut ParserReturn) -> ControlFlow<()> {
+        if parser_return.panicked || !parser_return.diagnostics.is_empty() {
+            let diagnostics = mem::take(&mut parser_return.diagnostics);
+            self.handle_errors(diagnostics);
+            return ControlFlow::Break(());
+        }
+
+        ControlFlow::Continue(())
+    }
+
+    fn after_isolated_declarations(&mut self, ret: CodegenReturn<'_>) {
+        self.output.declarations = Some(ret.code);
+        // Historically declaration sourcemaps were not emitted, so keep that behavior
+        // even though the shared codegen options can now produce one.
+        self.output.declarations_map_json = None;
+    }
+
+    fn after_codegen(&mut self, ret: CodegenReturn<'_>) {
+        self.output.source_text = Some(ret.code);
+        self.output.source_map_json = ret.map.map(|map| map.to_json_string());
+    }
 }

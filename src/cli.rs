@@ -1,4 +1,3 @@
-mod error;
 mod root;
 
 use std::{env, num::NonZeroUsize, path::PathBuf};
@@ -14,7 +13,7 @@ pub fn cli() -> ArgMatches {
             Arg::new("root")
                 .value_hint(ValueHint::DirPath)
                 .value_parser(path_parser)
-                .help("Path to the root directory of your project")
+                .help("Path to the root directory of your project. Defaults to nearest package.json")
                 .long_help("Path to the root directory of your project.
 
 By default, oxbuild will look for the nearest package.json starting at your CWD and walking up each parent. If you explicitly provide a path it will be used as-is and Oxbuild will not look for a package.json.")
@@ -63,7 +62,7 @@ pub struct CliOptions {
 
 impl CliOptions {
     pub fn new(matches: ArgMatches) -> Result<Self> {
-        let project_dir = matches.get_one::<String>("root").map(PathBuf::from);
+        let project_dir = matches.get_one::<PathBuf>("root").cloned();
         let root = if let Some(project_dir) = project_dir {
             let project_dir = if project_dir
                 .file_name()

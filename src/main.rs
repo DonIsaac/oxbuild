@@ -4,17 +4,22 @@ mod options;
 mod reporter;
 mod walk;
 
-use std::{process::ExitCode, thread, time::Instant};
+use std::{
+    io::{BufWriter, Write},
+    process::ExitCode,
+    thread,
+    time::Instant,
+};
 
 extern crate pretty_env_logger;
 #[macro_use]
 extern crate log;
-use miette::Result;
+use miette::{IntoDiagnostic, Result};
 
 use crate::{
     cli::{cli, CliOptions},
     options::OxbuildOptions,
-    reporter::{DiagnosticSender, Reporter},
+    reporter::Reporter,
 };
 
 #[allow(clippy::print_stdout)]
@@ -29,17 +34,18 @@ fn main() -> Result<ExitCode> {
     let start = Instant::now();
 
     let handle = thread::spawn(move || {
-        let mut walker = walk::WalkerBuilder::new(opts, report_sender.clone());
+        let mut walker = walk::WalkerBuilder::new(opts, report_sender);
         walker.walk(num_threads);
-        report_sender.send(None).unwrap();
     });
 
-    reporter.run();
+    let mut stderr = BufWriter::new(std::io::stderr());
+    let result = reporter.run(&mut stderr);
+    stderr.flush().into_diagnostic()?;
     handle.join().unwrap();
 
     let duration = start.elapsed();
-    let num_errors = reporter.errors_count();
-    let num_warnings = reporter.warnings_count();
+    let num_errors = result.errors_count();
+    let num_warnings = result.warnings_count();
     let did_fail = num_errors > 0;
 
     if num_errors > 0 && num_warnings > 0 {

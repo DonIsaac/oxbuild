@@ -6,11 +6,12 @@ use std::{
 };
 
 use ignore::{DirEntry, Error as WalkError, ParallelVisitor, ParallelVisitorBuilder, WalkState};
-use oxc::diagnostics::{Error, NamedSource, OxcDiagnostic};
+use oxc::diagnostics::{DiagnosticService, Error, OxcDiagnostic};
 
 use crate::{
     compiler::{compile, CompileOptions, CompiledOutput},
-    DiagnosticSender, OxbuildOptions,
+    options::OxbuildOptions,
+    reporter::DiagnosticSender,
 };
 
 pub struct WalkerBuilder {
@@ -79,9 +80,7 @@ impl Walker {
                     path.display(),
                     e
                 ));
-                self.sender
-                    .send(Some((path.to_path_buf(), vec![Error::new(error)])))
-                    .unwrap();
+                self.sender.send(vec![Error::new(error)]).unwrap();
                 return None;
             }
         };
@@ -89,14 +88,13 @@ impl Walker {
         match compile(&self.compile_options, path, &source_text) {
             Ok(output) => Some(output),
             Err(diagnostics) => {
-                let source = Arc::new(NamedSource::new(path.to_string_lossy(), source_text));
-                let errors = diagnostics
-                    .into_iter()
-                    .map(|diagnostic| diagnostic.with_source_code(Arc::clone(&source)))
-                    .collect();
-                self.sender
-                    .send(Some((path.to_path_buf(), errors)))
-                    .unwrap();
+                let errors = DiagnosticService::wrap_diagnostics(
+                    self.options.root.deref(),
+                    path,
+                    &source_text,
+                    diagnostics,
+                );
+                self.sender.send(errors).unwrap();
                 None
             }
         }
@@ -130,9 +128,9 @@ impl ParallelVisitor for Walker {
         // todo: resolve relative paths. Idk if this is absolute or not
         let Some(CompiledOutput {
             source_text,
-            source_map,
+            source_map_json,
             declarations,
-            declarations_map,
+            declarations_map_json,
         }) = self.compile(ent.path())
         else {
             return WalkState::Continue;
@@ -144,9 +142,9 @@ impl ParallelVisitor for Walker {
         fs::write(js_path, source_text).unwrap();
 
         // foo.js.map
-        if let Some(source_map) = source_map {
+        if let Some(source_map) = source_map_json {
             let map_path = output_path.with_extension("js.map");
-            fs::write(map_path, source_map.to_json_string()).unwrap();
+            fs::write(map_path, source_map).unwrap();
         }
 
         // foo.d.ts
@@ -156,9 +154,9 @@ impl ParallelVisitor for Walker {
         }
 
         // foo.d.ts.map
-        if let Some(declarations_map) = declarations_map {
+        if let Some(declarations_map) = declarations_map_json {
             let map_path = output_path.with_extension("d.ts.map");
-            fs::write(map_path, declarations_map.to_json_string()).unwrap();
+            fs::write(map_path, declarations_map).unwrap();
         }
 
         WalkState::Continue

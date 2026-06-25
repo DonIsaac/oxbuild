@@ -42,6 +42,12 @@ impl CompileOptions {
         self.declarations_options.as_ref()
     }
 
+    #[inline]
+    pub fn root_dir(&self) -> &Path {
+        &self.root_dir
+    }
+
+    #[allow(dead_code)]
     pub(crate) fn resolve<P: AsRef<Path>>(&self, path: P) -> io::Result<PathBuf> {
         self.root_dir.join(path).canonicalize()
     }
